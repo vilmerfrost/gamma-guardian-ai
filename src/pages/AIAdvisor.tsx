@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { mockChatHistory, type ChatMessage } from "@/data/mockData";
-import { Send, Brain, User, Sparkles, AlertTriangle, Lightbulb } from "lucide-react";
+import { Send, Brain, User, Sparkles, AlertTriangle, Lightbulb, ShieldCheck, Scale, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
@@ -132,8 +132,29 @@ const AIAdvisor = () => {
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="flex flex-col h-[calc(100vh-7rem)] max-w-4xl mx-auto">
       <motion.div variants={item} className="mb-4">
-        <h1 className="text-2xl font-bold text-foreground tracking-tight">AI Advisor</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Fråga om patientdata, dosoptimering och behandlingsplaner</p>
+        <div className="flex items-end justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">AI Advisor</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Fråga om patientdata, dosoptimering och behandlingsplaner</p>
+          </div>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-medical-amber/10 border border-medical-amber/20">
+            <Scale className="w-3.5 h-3.5 text-medical-amber" />
+            <span className="text-[10px] font-semibold text-medical-amber">Högrisk-AI (EU AI Act)</span>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* EU AI Act transparency banner */}
+      <motion.div variants={item} className="mb-3 bg-muted/30 border border-border rounded-xl p-3">
+        <div className="flex items-start gap-2">
+          <ShieldCheck className="w-4 h-4 text-medical-cyan shrink-0 mt-0.5" />
+          <div className="text-[10px] text-muted-foreground space-y-0.5">
+            <p className="font-semibold text-foreground text-xs">EU AI Act — Artikel 13, 14 (Transparens & Mänsklig tillsyn)</p>
+            <p>Detta AI-system är klassificerat som <strong className="text-foreground">högrisk-AI</strong> enligt EU:s AI-förordning (2024/1689), Annex I, punkt 5(b). 
+            AI:n förklarar sitt resonemang steg för steg, anger konfidensnivå och begränsningar. Alla svar loggas för spårbarhet (Art. 12). 
+            <strong className="text-foreground"> Ansvarig kliniker måste verifiera varje rekommendation innan kliniskt beslut.</strong></p>
+          </div>
+        </div>
       </motion.div>
 
       <motion.div variants={item} className="flex-1 card-medical flex flex-col overflow-hidden">

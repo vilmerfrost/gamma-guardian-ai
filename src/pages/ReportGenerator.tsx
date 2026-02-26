@@ -6,7 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import ReactMarkdown from "react-markdown";
 import {
   FileText, Download, Printer, CheckCircle2, Clock, User, Target,
-  Shield, AlertTriangle, Brain, HeartPulse, FileCheck,
+  Shield, AlertTriangle, Brain, HeartPulse, FileCheck, Scale, ShieldCheck,
 } from "lucide-react";
 import { logAuditEvent } from "@/lib/auditLog";
 import { toast } from "sonner";
@@ -104,15 +104,33 @@ const ReportGenerator = () => {
           <h1 className="text-2xl font-bold text-foreground tracking-tight">Rapportgenerator</h1>
           <p className="text-sm text-muted-foreground mt-0.5">AI-genererade behandlingsrapporter — PDF & EMR-kompatibel</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleGenerate} disabled={isGenerating}>
-            <FileText className="w-3.5 h-3.5 mr-1.5" />
-            {isGenerating ? "Genererar..." : "Generera rapport"}
-          </Button>
-          <Button variant="outline" size="sm" disabled={!reportReady}><Printer className="w-3.5 h-3.5 mr-1.5" />Skriv ut</Button>
-          <Button size="sm" className="gradient-primary text-primary-foreground border-0" disabled={!reportReady}>
-            <Download className="w-3.5 h-3.5 mr-1.5" />Exportera PDF
-          </Button>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-medical-amber/10 border border-medical-amber/20">
+            <Scale className="w-3.5 h-3.5 text-medical-amber" />
+            <span className="text-[10px] font-semibold text-medical-amber">Högrisk-AI (EU AI Act)</span>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleGenerate} disabled={isGenerating}>
+              <FileText className="w-3.5 h-3.5 mr-1.5" />
+              {isGenerating ? "Genererar..." : "Generera rapport"}
+            </Button>
+            <Button variant="outline" size="sm" disabled={!reportReady}><Printer className="w-3.5 h-3.5 mr-1.5" />Skriv ut</Button>
+            <Button size="sm" className="gradient-primary text-primary-foreground border-0" disabled={!reportReady}>
+              <Download className="w-3.5 h-3.5 mr-1.5" />Exportera PDF
+            </Button>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* EU AI Act compliance notice */}
+      <motion.div variants={item} className="bg-muted/30 border border-border rounded-xl p-3">
+        <div className="flex items-start gap-2">
+          <ShieldCheck className="w-4 h-4 text-medical-cyan shrink-0 mt-0.5" />
+          <div className="text-[10px] text-muted-foreground space-y-0.5">
+            <p className="font-semibold text-foreground text-xs">EU AI Act — Högrisk-AI (2024/1689)</p>
+            <p>Rapporter genereras av AI och inkluderar: steg-för-steg-resonemang (Art. 13), konfidensnivåer, begränsningar, 
+            och krav på mänsklig verifiering (Art. 14). Alla genereringar loggas automatiskt med tidsstämpel och AI-version (Art. 12).</p>
+          </div>
         </div>
       </motion.div>
 
@@ -213,17 +231,20 @@ const ReportGenerator = () => {
             {/* Compliance section */}
             <section className="border-t border-border pt-4">
               <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <HeartPulse className="w-4 h-4 text-medical-green" />
-                    <h4 className="text-xs font-semibold text-foreground">Regulatorisk information</h4>
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <HeartPulse className="w-4 h-4 text-medical-green" />
+                      <h4 className="text-xs font-semibold text-foreground">Regulatorisk information</h4>
+                    </div>
+                    <div className="text-[10px] text-muted-foreground space-y-1">
+                      <p><strong className="text-foreground">Klassificering:</strong> Högrisk-AI (EU AI Act 2024/1689, Annex I, 5(b))</p>
+                      <p><strong className="text-foreground">System:</strong> GammaAI v2.1.0 — CE-märkt medicinteknisk programvara</p>
+                      <p><strong className="text-foreground">AI-modell:</strong> Gemini 3 Flash Preview — Lovable AI Gateway</p>
+                      <p><strong className="text-foreground">Transparens (Art. 13):</strong> AI förklarar resonemang steg för steg</p>
+                      <p><strong className="text-foreground">Mänsklig tillsyn (Art. 14):</strong> Kräver klinisk verifiering</p>
+                      <p><strong className="text-foreground">Loggning (Art. 12):</strong> Alla beslut spåras i audit-loggen</p>
+                    </div>
                   </div>
-                  <div className="text-[10px] text-muted-foreground space-y-1">
-                    <p>System: GammaAI v2.1.0 — CE-märkt medicinteknisk programvara</p>
-                    <p>AI-modell: Gemini 3 Flash Preview — Lovable AI Gateway</p>
-                    <p>Audit-logg: Alla beslut spåras i databasen</p>
-                  </div>
-                </div>
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <FileCheck className="w-4 h-4 text-medical-amber" />

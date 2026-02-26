@@ -2,11 +2,14 @@ import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { Bell, Search, LogOut } from "lucide-react";
-import { NotificationPanel, useNotificationCount } from "@/components/NotificationPanel";
+import { NotificationPanel } from "@/components/NotificationPanel";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { useNotificationCount } from "@/hooks/useNotifications";
+import { useNavigate } from "react-router-dom";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
+  const navigate = useNavigate();
   const [notifOpen, setNotifOpen] = useState(false);
   const unreadCount = useNotificationCount();
   const { user, signOut } = useAuth();
@@ -44,6 +47,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 <NotificationPanel open={notifOpen} onClose={() => setNotifOpen(false)} />
               </div>
               <div className="flex items-center gap-2 pl-2 border-l border-border">
+                {!user && (
+                  <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => navigate("/auth")}>
+                    Sign In
+                  </Button>
+                )}
                 <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center">
                   <span className="text-xs font-semibold text-primary-foreground">
                     {user?.email?.slice(0, 2).toUpperCase() || "DR"}

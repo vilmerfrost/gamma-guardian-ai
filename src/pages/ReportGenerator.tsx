@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { logAuditEvent } from "@/lib/auditLog";
 import { toast } from "sonner";
+import { useNotifications } from "@/hooks/useNotifications";
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } };
 const item = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } };
@@ -22,6 +23,7 @@ const ReportGenerator = () => {
   const [reportReady, setReportReady] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [aiReport, setAiReport] = useState<string>("");
+  const { addNotification } = useNotifications();
 
   const patient = patients.find((p) => p.id === selectedPatientId)!;
   const plan = treatmentPlans[0];
@@ -85,6 +87,12 @@ const ReportGenerator = () => {
 
       setGenerationProgress(100);
       setReportReady(true);
+      addNotification({
+        type: "success",
+        title: "Rapport klar",
+        description: `AI-rapport för ${patient.name} är färdig för granskning.`,
+        link: "/dashboard/reports",
+      });
       logAuditEvent({
         eventType: "report_generated",
         eventCategory: "report",
@@ -333,7 +341,7 @@ const ReportGenerator = () => {
                   <div className="text-xs text-muted-foreground space-y-2 bg-muted/20 rounded-xl p-4">
                     <p><strong className="text-foreground">Klassificering:</strong> Högrisk-AI (EU AI Act 2024/1689, Annex I, 5(b))</p>
                     <p><strong className="text-foreground">System:</strong> GammaAI v2.1.0 — CE-märkt medicinteknisk programvara</p>
-                    <p><strong className="text-foreground">AI-modell:</strong> Gemini 3 Flash Preview — Lovable AI Gateway</p>
+                    <p><strong className="text-foreground">AI-modell:</strong> Gemini 3 Flash Preview — AI Gateway</p>
                     <p><strong className="text-foreground">Transparens (Art. 13):</strong> AI förklarar resonemang steg för steg</p>
                     <p><strong className="text-foreground">Mänsklig tillsyn (Art. 14):</strong> Kräver klinisk verifiering</p>
                     <p><strong className="text-foreground">Loggning (Art. 12):</strong> Alla beslut spåras i audit-loggen</p>

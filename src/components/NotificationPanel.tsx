@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -6,45 +5,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
-export interface Notification {
-  id: string;
-  type: "optimization" | "warning" | "success" | "info";
-  title: string;
-  description: string;
-  timestamp: string;
-  read: boolean;
-  archived: boolean;
-  link?: string; // route to navigate
-}
-
-const defaultNotifications: Notification[] = [
-  {
-    id: "n1", type: "optimization", title: "Optimera strålbana — P-2024-001",
-    description: "AI föreslår 1.2mm lateralt skift för 15% lägre cochlea-dos.",
-    timestamp: "5 min sedan", read: false, archived: false, link: "/dashboard/planning",
-  },
-  {
-    id: "n2", type: "warning", title: "OAR-gräns nära — N. facialis",
-    description: "P-2024-001: N. facialis dos 8.1 Gy (gräns 8.0 Gy).",
-    timestamp: "12 min sedan", read: false, archived: false, link: "/dashboard/planning",
-  },
-  {
-    id: "n3", type: "success", title: "Rapport genererad",
-    description: "Behandlingsrapport för Anna Lindström klar.",
-    timestamp: "1 timme sedan", read: false, archived: false, link: "/dashboard/reports",
-  },
-  {
-    id: "n4", type: "info", title: "AI-modell uppdaterad",
-    description: "Gemini 3 Flash Preview — ny version deployad.",
-    timestamp: "2 timmar sedan", read: true, archived: false, link: "/dashboard/settings",
-  },
-  {
-    id: "n5", type: "success", title: "Segmentering godkänd",
-    description: "GTV/CTV för Erik Johansson verifierad av Dr. Svensson.",
-    timestamp: "3 timmar sedan", read: true, archived: false, link: "/dashboard/image-analysis",
-  },
-];
+import { useNotifications, type AppNotification } from "@/hooks/useNotifications";
 
 const iconMap = {
   optimization: Zap,
@@ -67,24 +28,17 @@ interface NotificationPanelProps {
 
 export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
   const navigate = useNavigate();
-  const [notifications, setNotifications] = useState<Notification[]>(defaultNotifications);
+  const {
+    notifications,
+    unreadCount,
+    markRead,
+    markAllRead,
+    archiveNotification,
+  } = useNotifications();
 
-  const unreadCount = notifications.filter(n => !n.read && !n.archived).length;
   const visible = notifications.filter(n => !n.archived);
 
-  const markRead = (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-  };
-
-  const markAllRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  };
-
-  const archiveNotif = (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, archived: true } : n));
-  };
-
-  const handleClick = (notif: Notification) => {
+  const handleClick = (notif: AppNotification) => {
     markRead(notif.id);
     if (notif.link) {
       navigate(notif.link);
@@ -161,7 +115,7 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
                                   <Check className="w-3 h-3" />
                                 </button>
                               )}
-                              <button onClick={() => archiveNotif(notif.id)} className="text-[10px] text-muted-foreground hover:text-foreground px-1.5 py-0.5 rounded hover:bg-muted/50">
+                              <button onClick={() => archiveNotification(notif.id)} className="text-[10px] text-muted-foreground hover:text-foreground px-1.5 py-0.5 rounded hover:bg-muted/50">
                                 <Archive className="w-3 h-3" />
                               </button>
                             </div>
@@ -184,8 +138,4 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
       )}
     </AnimatePresence>
   );
-}
-
-export function useNotificationCount() {
-  return defaultNotifications.filter(n => !n.read && !n.archived).length;
 }

@@ -83,7 +83,7 @@ const LandingPage = () => {
           </div>
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" className="text-xs" onClick={() => navigate("/auth")}>
-              Login
+              Sign In
             </Button>
             <Button size="sm" className="gradient-primary text-primary-foreground border-0 text-xs" onClick={() => navigate("/auth")}>
               Request Access <ArrowRight className="w-3 h-3 ml-1" />

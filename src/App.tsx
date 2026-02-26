@@ -13,6 +13,7 @@ import ReportGenerator from "./pages/ReportGenerator";
 import SettingsPage from "./pages/Settings";
 import Auth from "./pages/Auth";
 import LandingPage from "./pages/LandingPage";
+import { NotificationProvider } from "@/hooks/useNotifications";
 
 const queryClient = new QueryClient();
 
@@ -59,13 +60,15 @@ const App = () => (
       <Toaster />
       <Sonner />
       <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/auth" element={<AuthRoute />} />
-            <Route path="/dashboard/*" element={<ProtectedRoutes />} />
-          </Routes>
-        </BrowserRouter>
+        <NotificationProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/auth" element={<AuthRoute />} />
+              <Route path="/dashboard/*" element={<ProtectedRoutes />} />
+            </Routes>
+          </BrowserRouter>
+        </NotificationProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>

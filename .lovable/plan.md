@@ -43,7 +43,7 @@ Appen är en **visuellt imponerande UI-prototyp** men saknar verklig funktionali
 
 **Vad som krävs:**
 - Dosberäkningsmotor (Monte Carlo eller pencil-beam) — typiskt extern specialiserad mjukvara
-- Optimeringsalgoritm för strålbanor (kan delvis levereras med Lovable AI för enklare heuristik)
+- Optimeringsalgoritm för strålbanor (kan delvis levereras med extern AI-tjänst för enklare heuristik)
 - Koppling till faktiska patientvolymer från segmenteringssteget
 
 ---
@@ -64,7 +64,7 @@ Appen är en **visuellt imponerande UI-prototyp** men saknar verklig funktionali
 
 ## Vad som faktiskt fungerar idag
 
-1. **AI Advisor Chat** — Riktigt fungerande med streaming via Lovable AI (Gemini). Kan svara på kliniska frågor på svenska.
+1. **AI Advisor Chat** — Riktigt fungerande med streaming via AI Gateway (Gemini). Kan svara på kliniska frågor på svenska.
 2. **Visuell design** — Professionell medicinteknisk UI med alla sidor navigerbara.
 3. **3D-vy** — Interaktiv rotation, zoom, pause (CSS-baserad, inte medicinsk volymrendering).
 4. **Mock-data** — Kliniskt realistisk patientdata med relevanta fält.
@@ -73,7 +73,7 @@ Appen är en **visuellt imponerande UI-prototyp** men saknar verklig funktionali
 
 ## Plan: Realistiska förbättringar inom webapp-ramverket
 
-Följande kan implementeras med befintlig teknologi (React + Lovable Cloud) för att göra appen mer funktionell utan att kräva extern ML-infrastruktur:
+Följande kan implementeras med befintlig teknologi (React + serverless backend) för att göra appen mer funktionell utan att kräva extern ML-infrastruktur:
 
 ### Steg 1: Interaktiv segmentering (Human-in-the-loop)
 - Gör SVG-konturer dragbara med kontrollpunkter
@@ -86,7 +86,7 @@ Följande kan implementeras med befintlig teknologi (React + Lovable Cloud) för
 - Sliders som faktiskt påverkar isodos-visualiseringen och OAR-doserna
 
 ### Steg 3: AI-driven analys via backend
-- Skicka patientdata till Lovable AI för kliniska rekommendationer
+- Skicka patientdata till AI Gateway för kliniska rekommendationer
 - AI-genererad riskbedömning baserat på OAR-avstånd och tumörvolym
 - Automatisk rapportgenerering via AI
 

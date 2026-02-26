@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect, Suspense, lazy } from "react";
+import { useState, useRef, useCallback, Suspense, lazy } from "react";
 import { motion } from "framer-motion";
 import { patients } from "@/data/mockData";
 import {
@@ -11,6 +11,9 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { ellipseVolume } from "@/lib/doseCalculations";
 import { logAuditEvent } from "@/lib/auditLog";
+import { parseMedicalFile, type ParsedMedicalFile } from "@/lib/medicalFile";
+import { useNotifications } from "@/hooks/useNotifications";
+import { toast } from "sonner";
 
 const BrainScene = lazy(() => import("@/components/BrainScene"));
 
@@ -35,12 +38,11 @@ const ImageAnalysis = () => {
   const [show3D, setShow3D] = useState(false);
   const [compareMode, setCompareMode] = useState(false);
   const [isAutoRotating, setIsAutoRotating] = useState(true);
-  const [rotateX, setRotateX] = useState(-15);
-  const [rotateY, setRotateY] = useState(0);
-  const [zoom, setZoom] = useState(1);
-  const isDragging = useRef(false);
+  const [uploadedScan, setUploadedScan] = useState<ParsedMedicalFile | null>(null);
+  const [isParsingFile, setIsParsingFile] = useState(false);
   const lastMouse = useRef({ x: 0, y: 0 });
-  const autoRotateRef = useRef<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { addNotification } = useNotifications();
 
   // Interactive contour state
   const [gtv, setGtv] = useState<ContourState>({ cx: 120, cy: 130, rx: 18, ry: 15 });
@@ -55,37 +57,42 @@ const ImageAnalysis = () => {
 
   const toggleLayer = (id: string) => setLayers(prev => prev.map(l => l.id === id ? { ...l, enabled: !l.enabled } : l));
 
-  // 3D auto-rotation
-  useEffect(() => {
-    if (show3D && isAutoRotating && !isDragging.current) {
-      const tick = () => {
-        setRotateY(prev => (prev + 0.3) % 360);
-        autoRotateRef.current = requestAnimationFrame(tick);
-      };
-      autoRotateRef.current = requestAnimationFrame(tick);
-      return () => { if (autoRotateRef.current) cancelAnimationFrame(autoRotateRef.current); };
-    }
-    return () => { if (autoRotateRef.current) cancelAnimationFrame(autoRotateRef.current); };
-  }, [show3D, isAutoRotating]);
+  const isLayerEnabled = useCallback((id: string) => layers.find((l) => l.id === id)?.enabled ?? false, [layers]);
 
-  const handlePointerDown3D = useCallback((e: React.PointerEvent) => {
-    isDragging.current = true;
-    lastMouse.current = { x: e.clientX, y: e.clientY };
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-  }, []);
-  const handlePointerMove3D = useCallback((e: React.PointerEvent) => {
-    if (!isDragging.current) return;
-    const dx = e.clientX - lastMouse.current.x;
-    const dy = e.clientY - lastMouse.current.y;
-    lastMouse.current = { x: e.clientX, y: e.clientY };
-    setRotateY(prev => prev + dx * 0.5);
-    setRotateX(prev => Math.max(-60, Math.min(60, prev - dy * 0.5)));
-  }, []);
-  const handlePointerUp3D = useCallback(() => { isDragging.current = false; }, []);
-  const handleWheel = useCallback((e: React.WheelEvent) => {
+  const handleMedicalFile = useCallback(async (file: File) => {
+    setIsParsingFile(true);
+    try {
+      const parsed = await parseMedicalFile(file);
+      setUploadedScan(parsed);
+      toast.success(`Fil mottagen: ${parsed.fileName}`);
+
+      setTimeout(() => {
+        addNotification({
+          type: "success",
+          title: "Segmentering slutförd",
+          description: `${parsed.fileName} har preprocessats och är redo för 3D-analys.`,
+          link: "/dashboard/image-analysis",
+        });
+      }, 650);
+    } catch (e: any) {
+      toast.error(e?.message || "Kunde inte läsa filen");
+    } finally {
+      setIsParsingFile(false);
+    }
+  }, [addNotification]);
+
+  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    setZoom(prev => Math.max(0.4, Math.min(3, prev - e.deltaY * 0.001)));
-  }, []);
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    void handleMedicalFile(file);
+  }, [handleMedicalFile]);
+
+  const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    void handleMedicalFile(file);
+  }, [handleMedicalFile]);
 
   // --- Contour drag handlers ---
   const getSVGPoint = useCallback((e: React.PointerEvent) => {
@@ -221,9 +228,12 @@ const ImageAnalysis = () => {
                     </div>
                   }>
                     <BrainScene
-                      showGTV={layers.find(l => l.id === "gtv")?.enabled}
-                      showCTV={layers.find(l => l.id === "ctv")?.enabled}
-                      showOAR={layers.find(l => l.id === "cochlea")?.enabled || layers.find(l => l.id === "brainstem")?.enabled}
+                      showGTV={isLayerEnabled("gtv")}
+                      showCTV={isLayerEnabled("ctv")}
+                      showCochlea={isLayerEnabled("cochlea")}
+                      showFacial={isLayerEnabled("facial")}
+                      showBrainstem={isLayerEnabled("brainstem")}
+                      showOptic={isLayerEnabled("optic")}
                       autoRotate={isAutoRotating}
                     />
                   </Suspense>
@@ -231,6 +241,9 @@ const ImageAnalysis = () => {
                   <div className="absolute top-4 left-4 space-y-2 pointer-events-auto z-10">
                     <div className="text-[10px] font-semibold text-medical-cyan bg-medical-cyan/10 px-2 py-0.5 rounded border border-medical-cyan/20">3D-rekonstruktion (WebGL)</div>
                     <div className="text-[10px] text-muted-foreground">{selectedPatient.name} — {selectedPatient.diagnosis}</div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {uploadedScan ? `Laddad fil: ${uploadedScan.fileName}` : "Sample model: Brain Atlas v1"}
+                    </div>
                     <div className="flex items-center gap-1.5 mt-2">
                       <Button variant="outline" size="sm" className={`h-7 text-[10px] gap-1 ${isAutoRotating ? "border-medical-cyan text-medical-cyan" : ""}`}
                         onClick={() => setIsAutoRotating(!isAutoRotating)}>
@@ -345,10 +358,29 @@ const ImageAnalysis = () => {
           </div>
 
           {/* Upload */}
-          <div className="card-medical border-dashed border-2 p-8 text-center">
+          <div
+            className="card-medical border-dashed border-2 p-8 text-center"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={handleDrop}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".dcm,.dicom,.nii,.nii.gz,application/dicom"
+              onChange={handleFileInput}
+              className="hidden"
+            />
             <Upload className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
             <p className="text-sm font-medium text-muted-foreground">Dra och släpp MRI/CT-bilder här</p>
-            <p className="text-xs text-muted-foreground/60 mt-1">DICOM, NIfTI format stöds — Automatisk AI-segmentering</p>
+            <p className="text-xs text-muted-foreground/60 mt-1">DICOM (.dcm/.dicom) och NIfTI (.nii/.nii.gz) stöds</p>
+            <Button variant="outline" size="sm" className="mt-3" onClick={() => fileInputRef.current?.click()} disabled={isParsingFile}>
+              {isParsingFile ? "Analyserar fil..." : "Välj fil"}
+            </Button>
+            {uploadedScan && (
+              <p className="text-[11px] text-medical-cyan mt-2">
+                {uploadedScan.fileName} · {(uploadedScan.sizeBytes / (1024 * 1024)).toFixed(2)} MB · {uploadedScan.format.toUpperCase()}
+              </p>
+            )}
           </div>
         </motion.div>
 

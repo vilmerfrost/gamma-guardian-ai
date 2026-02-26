@@ -29,6 +29,7 @@ import {
 } from "@/lib/doseCalculations";
 import { logAuditEvent } from "@/lib/auditLog";
 import { toast } from "sonner";
+import { useNotifications } from "@/hooks/useNotifications";
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } };
 const item = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } };
@@ -50,6 +51,7 @@ const PlanningAssistant = () => {
   const [planTab, setPlanTab] = useState("dose");
   const [isAILoading, setIsAILoading] = useState(false);
   const [aiRisk, setAiRisk] = useState<string | null>(null);
+  const { addNotification } = useNotifications();
 
   const currentDose = dose[0];
   const currentCollimator = collimator[0];
@@ -153,6 +155,12 @@ const PlanningAssistant = () => {
         patientId: selectedPatient.id,
         description: "AI-riskbedömning genererad",
         aiModelVersion: "gemini-3-flash-preview",
+      });
+      addNotification({
+        type: "success",
+        title: "AI-riskbedömning klar",
+        description: `Riskanalys för ${selectedPatient.name} är genererad och redo för klinisk granskning.`,
+        link: "/dashboard/planning",
       });
     } catch (e: any) {
       toast.error(e.message || "Kunde inte generera riskbedömning");

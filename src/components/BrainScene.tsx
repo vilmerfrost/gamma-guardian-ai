@@ -1,354 +1,181 @@
-import { useRef, useMemo, useEffect } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, MeshDistortMaterial } from "@react-three/drei";
+import { useMemo } from "react";
+import { Canvas } from "@react-three/fiber";
+import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 
 interface BrainSceneProps {
   showGTV?: boolean;
   showCTV?: boolean;
   showOAR?: boolean;
+  showCochlea?: boolean;
+  showFacial?: boolean;
+  showBrainstem?: boolean;
+  showOptic?: boolean;
   autoRotate?: boolean;
-  gtvPosition?: [number, number, number];
-  gtvSize?: [number, number, number];
 }
 
-/* ───────── Realistic procedural brain ───────── */
+function createBrainGeometry() {
+  const geometry = new THREE.SphereGeometry(1.35, 96, 96);
+  const pos = geometry.attributes.position;
+  const v = new THREE.Vector3();
 
-function BrainHemisphere({ side }: { side: "left" | "right" }) {
-  const ref = useRef<THREE.Mesh>(null);
-  const x = side === "left" ? -0.48 : 0.48;
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    const sulci = Math.sin(v.x * 8) * Math.cos(v.y * 7) * Math.sin(v.z * 6) * 0.035;
+    const hemispheres = Math.abs(v.x) * 0.025;
+    const baseScale = 1 + sulci + hemispheres;
+    v.multiplyScalar(baseScale);
+    pos.setXYZ(i, v.x * 1.05, v.y * 0.9 + 0.08, v.z * 1.08);
+  }
+
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function FacialNerveMesh() {
+  const curve = useMemo(
+    () =>
+      new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-0.72, -0.2, 0.4),
+        new THREE.Vector3(-0.84, -0.35, 0.18),
+        new THREE.Vector3(-0.86, -0.5, -0.08),
+      ]),
+    []
+  );
+
+  const tube = useMemo(() => new THREE.TubeGeometry(curve, 64, 0.032, 12, false), [curve]);
 
   return (
-    <mesh ref={ref} position={[x, 0.15, 0]} rotation={[0, 0, side === "left" ? 0.08 : -0.08]}>
-      <sphereGeometry args={[1.15, 64, 64]} />
-      <MeshDistortMaterial
-        color="#c4a6a0"
-        roughness={0.85}
-        metalness={0.05}
-        distort={0.28}
-        speed={0.4}
-        transparent
-        opacity={0.92}
-        depthWrite
-      />
+    <mesh geometry={tube}>
+      <meshStandardMaterial color="#f59e0b" emissive="#f59e0b" emissiveIntensity={0.2} />
     </mesh>
   );
 }
 
-function BrainSurface() {
-  // Outer cortex layer with sulci-like distortion
+function SampleBrainModel({
+  showGTV,
+  showCTV,
+  showCochlea,
+  showFacial,
+  showBrainstem,
+  showOptic,
+}: {
+  showGTV: boolean;
+  showCTV: boolean;
+  showCochlea: boolean;
+  showFacial: boolean;
+  showBrainstem: boolean;
+  showOptic: boolean;
+}) {
+  const brainGeometry = useMemo(() => createBrainGeometry(), []);
+
   return (
     <group>
-      <BrainHemisphere side="left" />
-      <BrainHemisphere side="right" />
-
-      {/* Fissure between hemispheres */}
-      <mesh position={[0, 0.15, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.02, 0.02, 2.2, 8]} />
-        <meshStandardMaterial color="#8a6860" roughness={1} />
-      </mesh>
-
-      {/* Cerebellum */}
-      <mesh position={[0, -0.9, -0.35]}>
-        <sphereGeometry args={[0.6, 48, 48]} />
-        <MeshDistortMaterial
-          color="#b8948e"
-          roughness={0.9}
-          metalness={0.02}
-          distort={0.22}
-          speed={0.3}
-          depthWrite
-        />
-      </mesh>
-
-      {/* Brain stem */}
-      <mesh position={[0, -1.25, -0.15]} rotation={[0.3, 0, 0]}>
-        <cylinderGeometry args={[0.18, 0.14, 0.7, 24]} />
-        <meshStandardMaterial color="#a07e78" roughness={0.9} metalness={0.02} />
-      </mesh>
-    </group>
-  );
-}
-
-/* ───────── Tumor (GTV) ───────── */
-
-function Tumor({
-  position = [-0.6, 0.4, 0.5] as [number, number, number],
-  size = [0.22, 0.18, 0.2] as [number, number, number],
-}) {
-  const ref = useRef<THREE.Mesh>(null);
-
-  useFrame(({ clock }) => {
-    if (ref.current) {
-      const s = 1 + Math.sin(clock.elapsedTime * 1.8) * 0.04;
-      ref.current.scale.set(s, s, s);
-    }
-  });
-
-  return (
-    <mesh ref={ref} position={position} renderOrder={2}>
-      <sphereGeometry args={[size[0], 48, 48]} />
-      <meshPhysicalMaterial
-        color="#e03030"
-        transparent
-        opacity={0.55}
-        roughness={0.4}
-        metalness={0.1}
-        emissive="#cc2020"
-        emissiveIntensity={0.35}
-        depthWrite={false}
-        side={THREE.FrontSide}
-      />
-    </mesh>
-  );
-}
-
-/* ───────── CTV margin overlay ───────── */
-
-function CTVMargin({
-  position = [-0.6, 0.4, 0.5] as [number, number, number],
-  size = 0.32,
-}) {
-  return (
-    <mesh position={position} renderOrder={1}>
-      <sphereGeometry args={[size, 48, 48]} />
-      <meshPhysicalMaterial
-        color="#7c3aed"
-        transparent
-        opacity={0.1}
-        roughness={0.6}
-        depthWrite={false}
-        side={THREE.DoubleSide}
-        wireframe
-      />
-    </mesh>
-  );
-}
-
-/* ───────── OAR markers ───────── */
-
-function OARMarkers() {
-  const groupRef = useRef<THREE.Group>(null);
-
-  useFrame(({ clock }) => {
-    if (groupRef.current) {
-      groupRef.current.children.forEach((child) => {
-        const mat = (child as THREE.Mesh).material as THREE.MeshPhysicalMaterial;
-        if (mat?.opacity !== undefined) {
-          mat.opacity = 0.25 + Math.sin(clock.elapsedTime * 1.2) * 0.1;
-        }
-      });
-    }
-  });
-
-  return (
-    <group ref={groupRef}>
-      {/* Left optic nerve */}
-      <mesh position={[-0.35, -0.1, 0.95]} rotation={[0.2, 0.3, 0]} renderOrder={3}>
-        <cylinderGeometry args={[0.035, 0.03, 0.55, 12]} />
+      <mesh geometry={brainGeometry}>
         <meshPhysicalMaterial
-          color="#f59e0b"
-          transparent
-          opacity={0.3}
-          depthWrite={false}
-          emissive="#f59e0b"
-          emissiveIntensity={0.15}
+          color="#d0b7b2"
+          roughness={0.78}
+          metalness={0.04}
+          clearcoat={0.22}
+          clearcoatRoughness={0.55}
+          transmission={0.06}
+          thickness={0.8}
         />
       </mesh>
-      {/* Right optic nerve */}
-      <mesh position={[0.35, -0.1, 0.95]} rotation={[0.2, -0.3, 0]} renderOrder={3}>
-        <cylinderGeometry args={[0.035, 0.03, 0.55, 12]} />
-        <meshPhysicalMaterial
-          color="#f59e0b"
-          transparent
-          opacity={0.3}
-          depthWrite={false}
-          emissive="#f59e0b"
-          emissiveIntensity={0.15}
-        />
-      </mesh>
-      {/* Optic chiasm */}
-      <mesh position={[0, -0.2, 0.85]} renderOrder={3}>
-        <sphereGeometry args={[0.08, 16, 16]} />
-        <meshPhysicalMaterial
-          color="#f59e0b"
-          transparent
-          opacity={0.3}
-          depthWrite={false}
-          emissive="#f59e0b"
-          emissiveIntensity={0.15}
-        />
-      </mesh>
-      {/* Cochlea left */}
-      <mesh position={[-0.65, -0.45, 0.3]} renderOrder={3}>
-        <sphereGeometry args={[0.09, 16, 16]} />
-        <meshPhysicalMaterial
-          color="#f59e0b"
-          transparent
-          opacity={0.3}
-          depthWrite={false}
-          emissive="#f59e0b"
-          emissiveIntensity={0.15}
-        />
-      </mesh>
-      {/* Cochlea right */}
-      <mesh position={[0.65, -0.45, 0.3]} renderOrder={3}>
-        <sphereGeometry args={[0.09, 16, 16]} />
-        <meshPhysicalMaterial
-          color="#f59e0b"
-          transparent
-          opacity={0.3}
-          depthWrite={false}
-          emissive="#f59e0b"
-          emissiveIntensity={0.15}
-        />
-      </mesh>
-    </group>
-  );
-}
 
-/* ───────── Radiation beam lines ───────── */
+      {showGTV && (
+        <mesh position={[-0.58, 0.35, 0.42]} scale={[1.05, 0.9, 0.85]}>
+          <sphereGeometry args={[0.23, 48, 48]} />
+          <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={0.35} transparent opacity={0.72} />
+        </mesh>
+      )}
 
-function BeamLines({ position = [-0.6, 0.4, 0.5] as [number, number, number] }) {
-  const beamsRef = useRef<THREE.Group>(null);
-  const angles = useMemo(() => [0, 45, 90, 135, 180, 225, 270, 315], []);
+      {showCTV && (
+        <mesh position={[-0.58, 0.35, 0.42]} scale={[1.18, 1.05, 1.08]}>
+          <sphereGeometry args={[0.29, 48, 48]} />
+          <meshStandardMaterial color="#7c3aed" emissive="#7c3aed" emissiveIntensity={0.2} transparent opacity={0.28} wireframe />
+        </mesh>
+      )}
 
-  useFrame(({ clock }) => {
-    if (beamsRef.current) {
-      beamsRef.current.children.forEach((child, i) => {
-        const mat = (child as THREE.Mesh).material as THREE.MeshBasicMaterial;
-        mat.opacity = 0.06 + Math.sin(clock.elapsedTime * 2.5 + i * 0.5) * 0.04;
-      });
-    }
-  });
-
-  return (
-    <group ref={beamsRef}>
-      {angles.map((angle, i) => {
-        const rad = (angle * Math.PI) / 180;
-        const len = 3.5;
-        const start = new THREE.Vector3(
-          position[0] + Math.cos(rad) * len,
-          position[1] + Math.sin(rad * 0.4) * len * 0.25,
-          position[2] + Math.sin(rad) * len
-        );
-        const end = new THREE.Vector3(...position);
-        const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
-        const dir = new THREE.Vector3().subVectors(end, start);
-
-        return (
-          <mesh
-            key={i}
-            position={mid}
-            quaternion={new THREE.Quaternion().setFromUnitVectors(
-              new THREE.Vector3(0, 1, 0),
-              dir.clone().normalize()
-            )}
-            renderOrder={0}
-          >
-            <cylinderGeometry args={[0.006, 0.006, dir.length(), 4]} />
-            <meshBasicMaterial color="#22d3ee" transparent opacity={0.08} depthWrite={false} />
+      {showCochlea && (
+        <group>
+          <mesh position={[-0.83, -0.48, 0.26]} rotation={[1.2, 0.4, 0.1]}>
+            <torusGeometry args={[0.09, 0.022, 16, 80]} />
+            <meshStandardMaterial color="#f59e0b" emissive="#f59e0b" emissiveIntensity={0.25} />
           </mesh>
-        );
-      })}
+          <mesh position={[0.83, -0.48, 0.26]} rotation={[1.2, -0.4, -0.1]}>
+            <torusGeometry args={[0.09, 0.022, 16, 80]} />
+            <meshStandardMaterial color="#f59e0b" emissive="#f59e0b" emissiveIntensity={0.25} />
+          </mesh>
+        </group>
+      )}
+
+      {showFacial && <FacialNerveMesh />}
+
+      {showBrainstem && (
+        <mesh position={[0, -1.05, -0.08]} rotation={[0.25, 0, 0]}>
+          <cylinderGeometry args={[0.2, 0.15, 0.82, 32]} />
+          <meshStandardMaterial color="#c8a9a0" roughness={0.75} />
+        </mesh>
+      )}
+
+      {showOptic && (
+        <mesh position={[0, -0.18, 0.92]}>
+          <sphereGeometry args={[0.075, 24, 24]} />
+          <meshStandardMaterial color="#f59e0b" emissive="#f59e0b" emissiveIntensity={0.2} />
+        </mesh>
+      )}
     </group>
   );
 }
-
-/* ───────── Isocenter crosshair ───────── */
-
-function Crosshair({ position = [-0.6, 0.4, 0.5] as [number, number, number] }) {
-  const ref = useRef<THREE.Group>(null);
-
-  useFrame(({ clock }) => {
-    if (ref.current) {
-      const s = 1 + Math.sin(clock.elapsedTime * 3) * 0.2;
-      ref.current.scale.set(s, s, s);
-    }
-  });
-
-  return (
-    <group ref={ref} position={position} renderOrder={4}>
-      <mesh>
-        <ringGeometry args={[0.04, 0.055, 48]} />
-        <meshBasicMaterial color="#22d3ee" transparent opacity={0.85} side={THREE.DoubleSide} depthWrite={false} />
-      </mesh>
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.04, 0.055, 48]} />
-        <meshBasicMaterial color="#22d3ee" transparent opacity={0.5} side={THREE.DoubleSide} depthWrite={false} />
-      </mesh>
-    </group>
-  );
-}
-
-/* ───────── GL config helper ───────── */
-
-function GLConfig() {
-  const { gl } = useThree();
-
-  useEffect(() => {
-    gl.sortObjects = true;
-    gl.toneMapping = THREE.ACESFilmicToneMapping;
-    gl.toneMappingExposure = 1.1;
-  }, [gl]);
-
-  return null;
-}
-
-/* ───────── Main scene ───────── */
 
 export default function BrainScene({
   showGTV = true,
   showCTV = true,
   showOAR = true,
+  showCochlea,
+  showFacial,
+  showBrainstem,
+  showOptic,
   autoRotate = true,
-  gtvPosition = [-0.6, 0.4, 0.5],
-  gtvSize = [0.22, 0.18, 0.2],
 }: BrainSceneProps) {
+  const cochleaVisible = showCochlea ?? showOAR;
+  const facialVisible = showFacial ?? showOAR;
+  const brainstemVisible = showBrainstem ?? showOAR;
+  const opticVisible = showOptic ?? showOAR;
+
   return (
     <Canvas
-      camera={{ position: [0, 0.5, 4.2], fov: 40 }}
+      camera={{ position: [0, 0.45, 4], fov: 40 }}
       style={{ background: "transparent" }}
-      dpr={[1, 1.5]}
-      gl={{
-        antialias: true,
-        alpha: true,
-        powerPreference: "high-performance",
-        logarithmicDepthBuffer: true,
-      }}
-      frameloop="always"
-      performance={{ min: 0.5 }}
+      dpr={[1, 2]}
+      gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+      performance={{ min: 0.8 }}
     >
-      <GLConfig />
+      <ambientLight intensity={0.58} />
+      <hemisphereLight intensity={0.38} color="#c9def8" groundColor="#8f726c" />
+      <directionalLight position={[4, 6, 3]} intensity={1.05} />
+      <directionalLight position={[-4, 1, -3]} intensity={0.28} color="#93c5fd" />
 
-      {/* Lighting for realistic depth */}
-      <ambientLight intensity={0.5} color="#f0ebe6" />
-      <directionalLight position={[5, 8, 5]} intensity={0.8} color="#ffffff" castShadow />
-      <directionalLight position={[-3, 2, -4]} intensity={0.25} color="#a0c4ff" />
-      <pointLight position={gtvPosition} intensity={0.6} color="#ff4444" distance={3} decay={2} />
-      <hemisphereLight args={["#b0d4f1", "#8b6f66", 0.3]} />
-
-      {/* Brain geometry */}
-      <BrainSurface />
-
-      {/* Clinical overlays */}
-      {showGTV && <Tumor position={gtvPosition} size={gtvSize} />}
-      {showCTV && <CTVMargin position={gtvPosition} size={gtvSize[0] * 1.5} />}
-      {showOAR && <OARMarkers />}
-      <BeamLines position={gtvPosition} />
-      <Crosshair position={gtvPosition} />
+      <SampleBrainModel
+        showGTV={showGTV}
+        showCTV={showCTV}
+        showCochlea={cochleaVisible}
+        showFacial={facialVisible}
+        showBrainstem={brainstemVisible}
+        showOptic={opticVisible}
+      />
 
       <OrbitControls
         autoRotate={autoRotate}
-        autoRotateSpeed={0.8}
-        enableDamping
-        dampingFactor={0.08}
+        autoRotateSpeed={0.5}
         enablePan
-        panSpeed={0.6}
-        minDistance={2}
-        maxDistance={9}
-        rotateSpeed={0.7}
-        zoomSpeed={0.7}
+        enableDamping
+        dampingFactor={0.05}
+        minDistance={2.1}
+        maxDistance={8}
+        rotateSpeed={0.65}
+        zoomSpeed={0.75}
       />
     </Canvas>
   );

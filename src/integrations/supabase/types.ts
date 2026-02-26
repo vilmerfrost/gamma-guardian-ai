@@ -14,7 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      audit_logs: {
+        Row: {
+          ai_model_version: string | null
+          created_at: string
+          description: string
+          event_category: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          patient_id: string
+          user_name: string
+        }
+        Insert: {
+          ai_model_version?: string | null
+          created_at?: string
+          description: string
+          event_category: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          patient_id: string
+          user_name?: string
+        }
+        Update: {
+          ai_model_version?: string | null
+          created_at?: string
+          description?: string
+          event_category?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          patient_id?: string
+          user_name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

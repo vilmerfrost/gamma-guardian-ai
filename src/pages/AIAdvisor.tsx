@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { mockChatHistory, patients, type ChatMessage } from "@/data/mockData";
+import { mockChatHistory, type ChatMessage } from "@/data/mockData";
 import { Send, Brain, User, Sparkles, AlertTriangle, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
+import { toast } from "sonner";
 
 const quickActions = [
   { label: "Sammanfatta patient P-2024-001", icon: Sparkles },
@@ -14,28 +15,63 @@ const quickActions = [
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } };
 const item = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
 
-const mockResponses: Record<string, string> = {
-  default: `## Analys av patient P-2024-001
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gamma-ai-chat`;
 
-**Anna Lindström**, 58 år, diagnostiserad med **vestibularisschwannom** (akustikusneurinom) i vänster cerebellopontina vinkel.
+async function streamChat({
+  messages,
+  onDelta,
+  onDone,
+  onError,
+}: {
+  messages: { role: string; content: string }[];
+  onDelta: (text: string) => void;
+  onDone: () => void;
+  onError: (msg: string) => void;
+}) {
+  const resp = await fetch(CHAT_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+    },
+    body: JSON.stringify({ messages }),
+  });
 
-### Tumördata
-- Storlek: 14mm × 12mm × 11mm
-- Volym: ~1.23 cm³
-- AI-segmenteringskonfidens: 96.8%
+  if (resp.status === 429) { onError("AI är överbelastad just nu, försök igen om en stund."); return; }
+  if (resp.status === 402) { onError("AI-krediter slut. Fyll på via Settings > Workspace > Usage."); return; }
+  if (!resp.ok || !resp.body) { onError("Kunde inte ansluta till AI."); return; }
 
-### Rekommendationer
-1. **Margindos**: 12 Gy i en fraktion (standard för akustikusneurinom)
-2. **Cochlea-skydd**: Håll max dos till cochlea under 4 Gy för bevarad hörsel
-3. **N. facialis**: Avstånd 2.8mm — kräver noggrann dosplanering
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  let done = false;
 
-### Risk-bedömning
-- Hörselbevarande: **73%** sannolikhet vid 12 Gy margindos
-- Tumörkontroll: **95%** vid 5-års uppföljning
-- Facialispares risk: **<1%**
+  while (!done) {
+    const { done: rdone, value } = await reader.read();
+    if (rdone) break;
+    buf += decoder.decode(value, { stream: true });
 
-> ⚡ *AI-förslag: Justera isocentrum 1.2mm lateralt för att minska cochlea-exponering med 15%.*`,
-};
+    let idx: number;
+    while ((idx = buf.indexOf("\n")) !== -1) {
+      let line = buf.slice(0, idx);
+      buf = buf.slice(idx + 1);
+      if (line.endsWith("\r")) line = line.slice(0, -1);
+      if (line.startsWith(":") || line.trim() === "") continue;
+      if (!line.startsWith("data: ")) continue;
+      const json = line.slice(6).trim();
+      if (json === "[DONE]") { done = true; break; }
+      try {
+        const parsed = JSON.parse(json);
+        const content = parsed.choices?.[0]?.delta?.content;
+        if (content) onDelta(content);
+      } catch {
+        buf = line + "\n" + buf;
+        break;
+      }
+    }
+  }
+  onDone();
+}
 
 const AIAdvisor = () => {
   const [messages, setMessages] = useState<ChatMessage[]>(mockChatHistory);
@@ -59,21 +95,38 @@ const AIAdvisor = () => {
       timestamp: new Date().toISOString(),
     };
 
-    setMessages((prev) => [...prev, userMsg]);
+    const newMessages = [...messages, userMsg];
+    setMessages(newMessages);
     setInput("");
     setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiMsg: ChatMessage = {
-        id: `msg-${Date.now()}-ai`,
-        role: "assistant",
-        content: mockResponses.default,
-        timestamp: new Date().toISOString(),
-      };
-      setMessages((prev) => [...prev, aiMsg]);
+    let assistantSoFar = "";
+    const apiMessages = newMessages.map(m => ({ role: m.role, content: m.content }));
+
+    try {
+      await streamChat({
+        messages: apiMessages,
+        onDelta: (chunk) => {
+          assistantSoFar += chunk;
+          const content = assistantSoFar;
+          setMessages(prev => {
+            const last = prev[prev.length - 1];
+            if (last?.role === "assistant" && last.id.startsWith("msg-stream")) {
+              return prev.map((m, i) => i === prev.length - 1 ? { ...m, content } : m);
+            }
+            return [...prev, { id: "msg-stream-" + Date.now(), role: "assistant", content, timestamp: new Date().toISOString() }];
+          });
+        },
+        onDone: () => setIsLoading(false),
+        onError: (msg) => {
+          toast.error(msg);
+          setIsLoading(false);
+        },
+      });
+    } catch {
+      toast.error("Något gick fel med AI-anslutningen.");
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -83,7 +136,6 @@ const AIAdvisor = () => {
         <p className="text-sm text-muted-foreground mt-0.5">Fråga om patientdata, dosoptimering och behandlingsplaner</p>
       </motion.div>
 
-      {/* Chat area */}
       <motion.div variants={item} className="flex-1 card-medical flex flex-col overflow-hidden">
         <div ref={scrollRef} className="flex-1 overflow-auto p-4 space-y-4">
           {messages.map((msg) => (
@@ -109,7 +161,7 @@ const AIAdvisor = () => {
               )}
             </div>
           ))}
-          {isLoading && (
+          {isLoading && !messages.some(m => m.id.startsWith("msg-stream")) && (
             <div className="flex gap-3">
               <div className="w-7 h-7 rounded-lg gradient-accent flex items-center justify-center shrink-0">
                 <Brain className="w-3.5 h-3.5 text-accent-foreground" />
@@ -125,7 +177,6 @@ const AIAdvisor = () => {
           )}
         </div>
 
-        {/* Quick actions */}
         {messages.length <= 1 && (
           <div className="px-4 pb-2">
             <div className="flex flex-wrap gap-2">
@@ -143,7 +194,6 @@ const AIAdvisor = () => {
           </div>
         )}
 
-        {/* Input */}
         <div className="p-3 border-t border-border">
           <form
             onSubmit={(e) => {

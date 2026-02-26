@@ -48,6 +48,7 @@ const ImageAnalysis = () => {
   const [isAutoRotating, setIsAutoRotating] = useState(true);
   const [rotateX, setRotateX] = useState(-15);
   const [rotateY, setRotateY] = useState(0);
+  const [zoom, setZoom] = useState(1);
   const isDragging = useRef(false);
   const lastMouse = useRef({ x: 0, y: 0 });
   const autoRotateRef = useRef<number | null>(null);
@@ -90,6 +91,11 @@ const ImageAnalysis = () => {
 
   const handlePointerUp = useCallback(() => {
     isDragging.current = false;
+  }, []);
+
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    setZoom(prev => Math.max(0.4, Math.min(3, prev - e.deltaY * 0.001)));
   }, []);
 
   return (
@@ -146,12 +152,13 @@ const ImageAnalysis = () => {
                   onPointerMove={handlePointerMove}
                   onPointerUp={handlePointerUp}
                   onPointerLeave={handlePointerUp}
+                  onWheel={handleWheel}
                 >
                   <div
-                    className="relative"
+                    className="relative transition-transform"
                     style={{
                       transformStyle: "preserve-3d",
-                      transform: `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
+                      transform: `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(${zoom})`,
                     }}
                   >
                     {/* Brain sphere - outer */}
@@ -255,10 +262,29 @@ const ImageAnalysis = () => {
                         variant="outline"
                         size="sm"
                         className="h-7 text-[10px] gap-1"
-                        onClick={(e) => { e.stopPropagation(); setRotateX(-15); setRotateY(0); }}
+                        onClick={(e) => { e.stopPropagation(); setRotateX(-15); setRotateY(0); setZoom(1); }}
                       >
                         <RotateCcw className="w-3 h-3" />Återställ
                       </Button>
+                      <div className="flex items-center gap-0.5 ml-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          onClick={(e) => { e.stopPropagation(); setZoom(prev => Math.min(3, prev + 0.2)); }}
+                        >
+                          <ZoomIn className="w-3 h-3" />
+                        </Button>
+                        <span className="text-[9px] text-muted-foreground w-8 text-center font-mono">{Math.round(zoom * 100)}%</span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          onClick={(e) => { e.stopPropagation(); setZoom(prev => Math.max(0.4, prev - 0.2)); }}
+                        >
+                          <ZoomOut className="w-3 h-3" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                   <div className="absolute top-4 right-4 text-[10px] text-muted-foreground/60 font-mono text-right space-y-0.5">
@@ -269,7 +295,7 @@ const ImageAnalysis = () => {
                   {/* Drag hint */}
                   <div className="absolute bottom-3 left-3 flex items-center gap-1.5 text-[10px] text-muted-foreground/50 pointer-events-none">
                     <Hand className="w-3.5 h-3.5" />
-                    Dra för att rotera — Klicka Pausa/Rotera för att växla
+                    Dra för att rotera — Scrolla för att zooma
                   </div>
                 </div>
               ) : (

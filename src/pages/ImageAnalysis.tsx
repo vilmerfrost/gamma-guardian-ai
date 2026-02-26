@@ -2,47 +2,34 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import { patients } from "@/data/mockData";
 import {
-  Upload,
-  Layers,
-  Eye,
-  RotateCcw,
-  ZoomIn,
-  ZoomOut,
-  Maximize2,
-  Grid3X3,
-  Brain,
-  AlertCircle,
-  CheckCircle2,
-  Clock,
-  ChevronDown,
-  Box,
-  GitCompare,
-  Crosshair,
-  Pause,
-  Play,
-  Hand,
+  Upload, Layers, Eye, RotateCcw, ZoomIn, ZoomOut, Maximize2, Grid3X3,
+  Brain, AlertCircle, CheckCircle2, Clock, ChevronDown, Box, GitCompare,
+  Crosshair, Pause, Play, Hand, GripVertical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { Progress } from "@/components/ui/progress";
+import { ellipseVolume } from "@/lib/doseCalculations";
+import { logAuditEvent } from "@/lib/auditLog";
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } };
 const item = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } };
 
-const segmentationLayers = [
-  { id: "gtv", label: "GTV (Tumör)", color: "bg-medical-red", enabled: true, volume: "1.23 cm³" },
-  { id: "ctv", label: "CTV (Klinisk målvolym)", color: "bg-medical-purple", enabled: true, volume: "2.41 cm³" },
-  { id: "cochlea", label: "OAR: Cochlea", color: "bg-medical-amber", enabled: true, volume: "0.18 cm³" },
-  { id: "brainstem", label: "OAR: Hjärnstam", color: "bg-medical-amber", enabled: true, volume: "—" },
-  { id: "facial", label: "OAR: N. facialis", color: "bg-medical-amber", enabled: true, volume: "—" },
-  { id: "optic", label: "OAR: Optisk chiasm", color: "bg-medical-amber", enabled: false, volume: "—" },
-];
+interface ContourState {
+  cx: number; cy: number; rx: number; ry: number;
+}
 
 const ImageAnalysis = () => {
   const [selectedPatient] = useState(patients[0]);
   const [activeView, setActiveView] = useState<"axial" | "sagittal" | "coronal">("axial");
-  const [layers, setLayers] = useState(segmentationLayers);
+  const [layers, setLayers] = useState([
+    { id: "gtv", label: "GTV (Tumör)", color: "bg-medical-red", enabled: true },
+    { id: "ctv", label: "CTV (Klinisk målvolym)", color: "bg-medical-purple", enabled: true },
+    { id: "cochlea", label: "OAR: Cochlea", color: "bg-medical-amber", enabled: true },
+    { id: "brainstem", label: "OAR: Hjärnstam", color: "bg-medical-amber", enabled: true },
+    { id: "facial", label: "OAR: N. facialis", color: "bg-medical-amber", enabled: true },
+    { id: "optic", label: "OAR: Optisk chiasm", color: "bg-medical-amber", enabled: false },
+  ]);
   const [show3D, setShow3D] = useState(false);
   const [compareMode, setCompareMode] = useState(false);
   const [isAutoRotating, setIsAutoRotating] = useState(true);
@@ -53,11 +40,20 @@ const ImageAnalysis = () => {
   const lastMouse = useRef({ x: 0, y: 0 });
   const autoRotateRef = useRef<number | null>(null);
 
-  const toggleLayer = (id: string) => {
-    setLayers(prev => prev.map(l => l.id === id ? { ...l, enabled: !l.enabled } : l));
-  };
+  // Interactive contour state
+  const [gtv, setGtv] = useState<ContourState>({ cx: 120, cy: 130, rx: 18, ry: 15 });
+  const [ctv, setCtv] = useState<ContourState>({ cx: 120, cy: 130, rx: 26, ry: 22 });
+  const [editingContour, setEditingContour] = useState<string | null>(null);
+  const [dragHandle, setDragHandle] = useState<string | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
 
-  // Auto-rotation
+  // Dynamic volumes
+  const gtvVolume = ellipseVolume(gtv.rx * 0.5, gtv.ry * 0.5, (gtv.rx + gtv.ry) * 0.25);
+  const ctvVolume = ellipseVolume(ctv.rx * 0.5, ctv.ry * 0.5, (ctv.rx + ctv.ry) * 0.25);
+
+  const toggleLayer = (id: string) => setLayers(prev => prev.map(l => l.id === id ? { ...l, enabled: !l.enabled } : l));
+
+  // 3D auto-rotation
   useEffect(() => {
     if (show3D && isAutoRotating && !isDragging.current) {
       const tick = () => {
@@ -65,22 +61,17 @@ const ImageAnalysis = () => {
         autoRotateRef.current = requestAnimationFrame(tick);
       };
       autoRotateRef.current = requestAnimationFrame(tick);
-      return () => {
-        if (autoRotateRef.current) cancelAnimationFrame(autoRotateRef.current);
-      };
+      return () => { if (autoRotateRef.current) cancelAnimationFrame(autoRotateRef.current); };
     }
-    return () => {
-      if (autoRotateRef.current) cancelAnimationFrame(autoRotateRef.current);
-    };
+    return () => { if (autoRotateRef.current) cancelAnimationFrame(autoRotateRef.current); };
   }, [show3D, isAutoRotating]);
 
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+  const handlePointerDown3D = useCallback((e: React.PointerEvent) => {
     isDragging.current = true;
     lastMouse.current = { x: e.clientX, y: e.clientY };
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   }, []);
-
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+  const handlePointerMove3D = useCallback((e: React.PointerEvent) => {
     if (!isDragging.current) return;
     const dx = e.clientX - lastMouse.current.x;
     const dy = e.clientY - lastMouse.current.y;
@@ -88,24 +79,92 @@ const ImageAnalysis = () => {
     setRotateY(prev => prev + dx * 0.5);
     setRotateX(prev => Math.max(-60, Math.min(60, prev - dy * 0.5)));
   }, []);
-
-  const handlePointerUp = useCallback(() => {
-    isDragging.current = false;
-  }, []);
-
+  const handlePointerUp3D = useCallback(() => { isDragging.current = false; }, []);
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
     setZoom(prev => Math.max(0.4, Math.min(3, prev - e.deltaY * 0.001)));
   }, []);
+
+  // --- Contour drag handlers ---
+  const getSVGPoint = useCallback((e: React.PointerEvent) => {
+    if (!svgRef.current) return { x: 0, y: 0 };
+    const pt = svgRef.current.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+    const svgPt = pt.matrixTransform(svgRef.current.getScreenCTM()?.inverse());
+    return { x: svgPt.x, y: svgPt.y };
+  }, []);
+
+  const handleContourPointerDown = useCallback((e: React.PointerEvent, contourId: string, handle: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setEditingContour(contourId);
+    setDragHandle(handle);
+    lastMouse.current = getSVGPoint(e);
+    (e.target as Element).setPointerCapture(e.pointerId);
+  }, [getSVGPoint]);
+
+  const handleContourPointerMove = useCallback((e: React.PointerEvent) => {
+    if (!editingContour || !dragHandle) return;
+    const pt = getSVGPoint(e);
+    const dx = pt.x - lastMouse.current.x;
+    const dy = pt.y - lastMouse.current.y;
+    lastMouse.current = pt;
+
+    const setter = editingContour === "gtv" ? setGtv : setCtv;
+    setter(prev => {
+      if (dragHandle === "center") return { ...prev, cx: prev.cx + dx, cy: prev.cy + dy };
+      if (dragHandle === "right") return { ...prev, rx: Math.max(8, prev.rx + dx) };
+      if (dragHandle === "bottom") return { ...prev, ry: Math.max(8, prev.ry + dy) };
+      if (dragHandle === "left") return { ...prev, rx: Math.max(8, prev.rx - dx) };
+      if (dragHandle === "top") return { ...prev, ry: Math.max(8, prev.ry - dy) };
+      return prev;
+    });
+  }, [editingContour, dragHandle, getSVGPoint]);
+
+  const handleContourPointerUp = useCallback(() => {
+    if (editingContour) {
+      const contour = editingContour === "gtv" ? gtv : ctv;
+      logAuditEvent({
+        eventType: "segmentation_edit",
+        eventCategory: "segmentation",
+        patientId: selectedPatient.id,
+        description: `${editingContour.toUpperCase()}-kontur redigerad manuellt`,
+        metadata: { cx: contour.cx, cy: contour.cy, rx: contour.rx, ry: contour.ry },
+      });
+    }
+    setEditingContour(null);
+    setDragHandle(null);
+  }, [editingContour, gtv, ctv, selectedPatient.id]);
+
+  const renderControlPoints = (contourId: string, c: ContourState, color: string) => {
+    const handles = [
+      { id: "center", x: c.cx, y: c.cy },
+      { id: "right", x: c.cx + c.rx, y: c.cy },
+      { id: "left", x: c.cx - c.rx, y: c.cy },
+      { id: "top", x: c.cx, y: c.cy - c.ry },
+      { id: "bottom", x: c.cx, y: c.cy + c.ry },
+    ];
+    return handles.map(h => (
+      <circle
+        key={`${contourId}-${h.id}`}
+        cx={h.x} cy={h.y} r={h.id === "center" ? 4 : 3.5}
+        fill={h.id === "center" ? color : "white"}
+        stroke={color}
+        strokeWidth={1.5}
+        className="cursor-grab active:cursor-grabbing"
+        style={{ pointerEvents: "all" }}
+        onPointerDown={(e) => handleContourPointerDown(e, contourId, h.id)}
+      />
+    ));
+  };
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6 max-w-7xl mx-auto">
       <motion.div variants={item} className="flex items-end justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground tracking-tight">Patientbildanalys</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            AI-segmentering av GTV/CTV och kritiska strukturer (OAR)
-          </p>
+          <p className="text-sm text-muted-foreground mt-0.5">AI-segmentering av GTV/CTV och kritiska strukturer (OAR)</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setCompareMode(!compareMode)} className={compareMode ? "border-medical-purple text-medical-purple" : ""}>
@@ -118,7 +177,6 @@ const ImageAnalysis = () => {
       </motion.div>
 
       <div className="grid lg:grid-cols-4 gap-6">
-        {/* Image viewer */}
         <motion.div variants={item} className="lg:col-span-3 space-y-4">
           {/* Toolbar */}
           <div className="card-medical p-2 flex items-center justify-between">
@@ -131,175 +189,118 @@ const ImageAnalysis = () => {
               <Button variant="ghost" size="sm" className="h-8 w-8 p-0"><Grid3X3 className="w-4 h-4" /></Button>
               <Button variant="ghost" size="sm" className="h-8 w-8 p-0"><Layers className="w-4 h-4" /></Button>
             </div>
-            <Tabs value={activeView} onValueChange={(v) => setActiveView(v as any)}>
-              <TabsList className="h-8">
-                <TabsTrigger value="axial" className="text-xs h-6 px-3">Axial</TabsTrigger>
-                <TabsTrigger value="sagittal" className="text-xs h-6 px-3">Sagittal</TabsTrigger>
-                <TabsTrigger value="coronal" className="text-xs h-6 px-3">Koronal</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div className="flex items-center gap-2">
+              {!show3D && (
+                <span className="text-[10px] text-medical-cyan flex items-center gap-1">
+                  <GripVertical className="w-3 h-3" /> Dra kontrollpunkter för att redigera
+                </span>
+              )}
+              <Tabs value={activeView} onValueChange={(v) => setActiveView(v as any)}>
+                <TabsList className="h-8">
+                  <TabsTrigger value="axial" className="text-xs h-6 px-3">Axial</TabsTrigger>
+                  <TabsTrigger value="sagittal" className="text-xs h-6 px-3">Sagittal</TabsTrigger>
+                  <TabsTrigger value="coronal" className="text-xs h-6 px-3">Koronal</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
           </div>
 
-          {/* Main scan view */}
+          {/* Main view */}
           <div className="card-medical overflow-hidden">
             <div className="relative h-[400px] md:h-[500px] bg-foreground/[0.03] medical-grid">
               {show3D ? (
-                /* 3D Visualization with drag interaction */
                 <div
                   className="absolute inset-0 flex items-center justify-center select-none"
                   style={{ perspective: "800px", cursor: isDragging.current ? "grabbing" : "grab" }}
-                  onPointerDown={handlePointerDown}
-                  onPointerMove={handlePointerMove}
-                  onPointerUp={handlePointerUp}
-                  onPointerLeave={handlePointerUp}
+                  onPointerDown={handlePointerDown3D}
+                  onPointerMove={handlePointerMove3D}
+                  onPointerUp={handlePointerUp3D}
+                  onPointerLeave={handlePointerUp3D}
                   onWheel={handleWheel}
                 >
-                  <div
-                    className="relative transition-transform"
-                    style={{
-                      transformStyle: "preserve-3d",
-                      transform: `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(${zoom})`,
-                    }}
-                  >
-                    {/* Brain sphere - outer */}
+                  <div className="relative transition-transform" style={{ transformStyle: "preserve-3d", transform: `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(${zoom})` }}>
                     <div className="w-56 h-56 md:w-72 md:h-72 rounded-full border border-muted-foreground/15 relative" style={{ transformStyle: "preserve-3d" }}>
-                      {/* Equator ring */}
                       <div className="absolute inset-0 rounded-full border-2 border-muted-foreground/10" style={{ transform: "rotateX(90deg)" }} />
-                      {/* Meridian rings */}
                       <div className="absolute inset-0 rounded-full border border-muted-foreground/8" style={{ transform: "rotateY(45deg)" }} />
                       <div className="absolute inset-0 rounded-full border border-muted-foreground/8" style={{ transform: "rotateY(-45deg)" }} />
                       <div className="absolute inset-0 rounded-full border border-muted-foreground/8" style={{ transform: "rotateY(90deg)" }} />
-
-                      {/* Inner brain tissue */}
                       <div className="absolute inset-4 rounded-full bg-muted-foreground/5 border border-muted-foreground/8" />
                       <div className="absolute inset-8 rounded-full bg-muted-foreground/5 border border-muted-foreground/5" />
-
-                      {/* GTV tumor */}
                       {layers.find(l => l.id === "gtv")?.enabled && (
-                        <motion.div
-                          className="absolute w-8 h-8 md:w-10 md:h-10 rounded-full bg-medical-red/30 border-2 border-medical-red shadow-[0_0_20px_hsl(0_72%_51%/0.4)]"
+                        <motion.div className="absolute w-8 h-8 md:w-10 md:h-10 rounded-full bg-medical-red/30 border-2 border-medical-red shadow-[0_0_20px_hsl(0_72%_51%/0.4)]"
                           style={{ top: "28%", left: "22%", transformStyle: "preserve-3d", transform: "translateZ(30px)" }}
-                          animate={{ scale: [1, 1.15, 1], boxShadow: ["0 0 15px hsl(0 72% 51%/0.3)", "0 0 30px hsl(0 72% 51%/0.6)", "0 0 15px hsl(0 72% 51%/0.3)"] }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        />
+                          animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 2, repeat: Infinity }} />
                       )}
-
-                      {/* CTV margin */}
                       {layers.find(l => l.id === "ctv")?.enabled && (
-                        <div
-                          className="absolute w-14 h-14 md:w-16 md:h-16 rounded-full border-2 border-dashed border-medical-purple/40"
-                          style={{ top: "23%", left: "17%", transform: "translateZ(30px)" }}
-                        />
+                        <div className="absolute w-14 h-14 md:w-16 md:h-16 rounded-full border-2 border-dashed border-medical-purple/40"
+                          style={{ top: "23%", left: "17%", transform: "translateZ(30px)" }} />
                       )}
-
-                      {/* OAR markers */}
                       {layers.find(l => l.id === "cochlea")?.enabled && (
-                        <motion.div
-                          className="absolute w-4 h-4 rounded-full bg-medical-amber/20 border-2 border-medical-amber/60"
+                        <motion.div className="absolute w-4 h-4 rounded-full bg-medical-amber/20 border-2 border-medical-amber/60"
                           style={{ top: "55%", left: "18%", transform: "translateZ(20px)" }}
-                          animate={{ opacity: [0.6, 1, 0.6] }}
-                          transition={{ duration: 1.5, repeat: Infinity }}
-                        />
+                          animate={{ opacity: [0.6, 1, 0.6] }} transition={{ duration: 1.5, repeat: Infinity }} />
                       )}
                       {layers.find(l => l.id === "brainstem")?.enabled && (
-                        <div
-                          className="absolute w-10 h-6 rounded-full bg-medical-amber/10 border border-medical-amber/40"
-                          style={{ bottom: "18%", left: "38%", transform: "translateZ(10px)" }}
-                        />
+                        <div className="absolute w-10 h-6 rounded-full bg-medical-amber/10 border border-medical-amber/40"
+                          style={{ bottom: "18%", left: "38%", transform: "translateZ(10px)" }} />
                       )}
                       {layers.find(l => l.id === "facial")?.enabled && (
-                        <div
-                          className="absolute w-1 h-12 rounded-full bg-medical-amber/40"
-                          style={{ top: "30%", left: "25%", transform: "rotateZ(-15deg) translateZ(25px)" }}
-                        />
+                        <div className="absolute w-1 h-12 rounded-full bg-medical-amber/40"
+                          style={{ top: "30%", left: "25%", transform: "rotateZ(-15deg) translateZ(25px)" }} />
                       )}
-
-                      {/* Beam paths */}
                       {[0, 40, 80, 120, 160, 200, 240, 280, 320].map((angle, i) => {
                         const rad = (angle * Math.PI) / 180;
                         return (
-                          <motion.div
-                            key={i}
-                            className="absolute h-px origin-right"
-                            style={{
-                              width: "80px",
-                              top: `${35 + Math.sin(rad) * 30}%`,
-                              left: `${28 + Math.cos(rad) * 30}%`,
+                          <motion.div key={i} className="absolute h-px origin-right"
+                            style={{ width: "80px", top: `${35 + Math.sin(rad) * 30}%`, left: `${28 + Math.cos(rad) * 30}%`,
                               transform: `rotate(${angle + 180}deg) translateZ(${15 + i * 2}px)`,
-                              background: `linear-gradient(90deg, transparent, hsl(187 80% 42% / 0.5))`,
-                            }}
-                            animate={{ opacity: [0.2, 0.6, 0.2] }}
-                            transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.12 }}
-                          />
+                              background: `linear-gradient(90deg, transparent, hsl(187 80% 42% / 0.5))` }}
+                            animate={{ opacity: [0.2, 0.6, 0.2] }} transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.12 }} />
                         );
                       })}
-
-                      {/* Center crosshair */}
-                      <motion.div
-                        className="absolute w-4 h-4 border-2 border-medical-cyan rounded-full"
+                      <motion.div className="absolute w-4 h-4 border-2 border-medical-cyan rounded-full"
                         style={{ top: "32%", left: "28%", transform: "translateZ(30px)" }}
-                        animate={{ scale: [1, 1.3, 1], opacity: [0.6, 1, 0.6] }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
-                      />
+                        animate={{ scale: [1, 1.3, 1], opacity: [0.6, 1, 0.6] }} transition={{ duration: 1.5, repeat: Infinity }} />
                     </div>
                   </div>
-
-                  {/* 3D controls overlay */}
+                  {/* 3D controls */}
                   <div className="absolute top-4 left-4 space-y-2 pointer-events-auto">
                     <div className="text-[10px] font-semibold text-medical-cyan bg-medical-cyan/10 px-2 py-0.5 rounded border border-medical-cyan/20">3D-rekonstruktion</div>
                     <div className="text-[10px] text-muted-foreground">{selectedPatient.name} — {selectedPatient.diagnosis}</div>
                     <div className="flex items-center gap-1.5 mt-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className={`h-7 text-[10px] gap-1 ${isAutoRotating ? "border-medical-cyan text-medical-cyan" : ""}`}
-                        onClick={(e) => { e.stopPropagation(); setIsAutoRotating(!isAutoRotating); }}
-                      >
+                      <Button variant="outline" size="sm" className={`h-7 text-[10px] gap-1 ${isAutoRotating ? "border-medical-cyan text-medical-cyan" : ""}`}
+                        onClick={(e) => { e.stopPropagation(); setIsAutoRotating(!isAutoRotating); }}>
                         {isAutoRotating ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
                         {isAutoRotating ? "Pausa" : "Rotera"}
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-[10px] gap-1"
-                        onClick={(e) => { e.stopPropagation(); setRotateX(-15); setRotateY(0); setZoom(1); }}
-                      >
+                      <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1"
+                        onClick={(e) => { e.stopPropagation(); setRotateX(-15); setRotateY(0); setZoom(1); }}>
                         <RotateCcw className="w-3 h-3" />Återställ
                       </Button>
                       <div className="flex items-center gap-0.5 ml-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 w-7 p-0"
-                          onClick={(e) => { e.stopPropagation(); setZoom(prev => Math.min(3, prev + 0.2)); }}
-                        >
+                        <Button variant="outline" size="sm" className="h-7 w-7 p-0"
+                          onClick={(e) => { e.stopPropagation(); setZoom(prev => Math.min(3, prev + 0.2)); }}>
                           <ZoomIn className="w-3 h-3" />
                         </Button>
                         <span className="text-[9px] text-muted-foreground w-8 text-center font-mono">{Math.round(zoom * 100)}%</span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 w-7 p-0"
-                          onClick={(e) => { e.stopPropagation(); setZoom(prev => Math.max(0.4, prev - 0.2)); }}
-                        >
+                        <Button variant="outline" size="sm" className="h-7 w-7 p-0"
+                          onClick={(e) => { e.stopPropagation(); setZoom(prev => Math.max(0.4, prev - 0.2)); }}>
                           <ZoomOut className="w-3 h-3" />
                         </Button>
                       </div>
                     </div>
                   </div>
                   <div className="absolute top-4 right-4 text-[10px] text-muted-foreground/60 font-mono text-right space-y-0.5">
-                    <p>Volym: 1.23 cm³</p>
+                    <p>Volym: {gtvVolume} cm³</p>
                     <p>9 strålbanor visade</p>
                     <p>{isAutoRotating ? "Auto-rotation" : "Manuell rotation"}</p>
                   </div>
-                  {/* Drag hint */}
                   <div className="absolute bottom-3 left-3 flex items-center gap-1.5 text-[10px] text-muted-foreground/50 pointer-events-none">
-                    <Hand className="w-3.5 h-3.5" />
-                    Dra för att rotera — Scrolla för att zooma
+                    <Hand className="w-3.5 h-3.5" /> Dra för att rotera — Scrolla för att zooma
                   </div>
                 </div>
               ) : (
-                /* 2D Scan view */
+                /* 2D Scan with interactive contours */
                 <>
                   {compareMode && (
                     <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
@@ -310,26 +311,44 @@ const ImageAnalysis = () => {
                   )}
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="relative">
-                      <svg width="340" height="340" viewBox="0 0 340 340" className="opacity-90">
+                      <svg ref={svgRef} width="340" height="340" viewBox="0 0 340 340" className="opacity-90"
+                        onPointerMove={handleContourPointerMove} onPointerUp={handleContourPointerUp} onPointerLeave={handleContourPointerUp}>
+                        {/* Brain anatomy */}
                         <ellipse cx="170" cy="170" rx="145" ry="155" fill="none" stroke="hsl(215 20% 60%)" strokeWidth="1.5" opacity="0.4" />
                         <ellipse cx="170" cy="170" rx="130" ry="140" fill="none" stroke="hsl(215 20% 60%)" strokeWidth="0.5" opacity="0.2" />
                         <ellipse cx="170" cy="165" rx="120" ry="125" fill="hsl(215 15% 45%)" opacity="0.15" />
                         <ellipse cx="170" cy="170" rx="90" ry="100" fill="hsl(215 15% 40%)" opacity="0.1" />
                         <ellipse cx="155" cy="155" rx="15" ry="30" fill="hsl(215 20% 30%)" opacity="0.15" transform="rotate(-5 155 155)" />
                         <ellipse cx="185" cy="155" rx="15" ry="30" fill="hsl(215 20% 30%)" opacity="0.15" transform="rotate(5 185 155)" />
-                        {/* GTV */}
+
+                        {/* Interactive GTV */}
                         {layers.find(l => l.id === "gtv")?.enabled && (
-                          <motion.ellipse cx="120" cy="130" rx="18" ry="15" fill="hsl(0 72% 51%)" opacity="0.35" stroke="hsl(0 72% 51%)" strokeWidth="2"
-                            animate={{ opacity: [0.3, 0.5, 0.3] }} transition={{ duration: 2, repeat: Infinity }} />
+                          <>
+                            <motion.ellipse cx={gtv.cx} cy={gtv.cy} rx={gtv.rx} ry={gtv.ry}
+                              fill="hsl(0 72% 51%)" opacity="0.35" stroke="hsl(0 72% 51%)" strokeWidth="2"
+                              animate={{ opacity: [0.3, 0.5, 0.3] }} transition={{ duration: 2, repeat: Infinity }}
+                              className="cursor-move" style={{ pointerEvents: "all" }}
+                              onPointerDown={(e) => handleContourPointerDown(e, "gtv", "center")} />
+                            {renderControlPoints("gtv", gtv, "hsl(0, 72%, 51%)")}
+                          </>
                         )}
-                        {/* CTV */}
+
+                        {/* Interactive CTV */}
                         {layers.find(l => l.id === "ctv")?.enabled && (
-                          <motion.ellipse cx="120" cy="130" rx="26" ry="22" fill="none" stroke="hsl(260 55% 50%)" strokeWidth="1.5" strokeDasharray="4 3"
-                            animate={{ strokeDashoffset: [0, -14] }} transition={{ duration: 3, repeat: Infinity, ease: "linear" }} />
+                          <>
+                            <motion.ellipse cx={ctv.cx} cy={ctv.cy} rx={ctv.rx} ry={ctv.ry}
+                              fill="none" stroke="hsl(260 55% 50%)" strokeWidth="1.5" strokeDasharray="4 3"
+                              animate={{ strokeDashoffset: [0, -14] }} transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                              className="cursor-move" style={{ pointerEvents: "all" }}
+                              onPointerDown={(e) => handleContourPointerDown(e, "ctv", "center")} />
+                            {renderControlPoints("ctv", ctv, "hsl(260, 55%, 50%)")}
+                          </>
                         )}
-                        {/* AI contour */}
+
+                        {/* AI contour reference */}
                         <motion.ellipse cx="120" cy="130" rx="22" ry="19" fill="none" stroke="hsl(187 80% 42%)" strokeWidth="1.5" strokeDasharray="4 2"
                           animate={{ strokeDashoffset: [0, -12] }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} />
+
                         {/* OARs */}
                         {layers.find(l => l.id === "cochlea")?.enabled && (
                           <circle cx="100" cy="190" r="8" fill="hsl(38 92% 50%)" opacity="0.15" stroke="hsl(38 92% 50%)" strokeWidth="1.5" />
@@ -344,36 +363,30 @@ const ImageAnalysis = () => {
                         <line x1="0" y1="170" x2="340" y2="170" stroke="hsl(215 20% 60%)" strokeWidth="0.3" opacity="0.3" />
                         <line x1="170" y1="0" x2="170" y2="340" stroke="hsl(215 20% 60%)" strokeWidth="0.3" opacity="0.3" />
                       </svg>
-                      <div className="absolute text-[10px] font-medium text-medical-red" style={{ top: "22%", left: "18%" }}>
-                        GTV 14mm
+                      {/* Labels */}
+                      <div className="absolute text-[10px] font-medium text-medical-red pointer-events-none"
+                        style={{ top: `${((gtv.cy - gtv.ry - 15) / 340) * 100}%`, left: `${((gtv.cx - 10) / 340) * 100}%` }}>
+                        GTV {Math.round(gtv.rx * 2 * 0.5)}mm
                       </div>
-                      <div className="absolute text-[10px] font-medium text-medical-purple" style={{ top: "18%", left: "30%" }}>
-                        CTV +3mm
+                      <div className="absolute text-[10px] font-medium text-medical-purple pointer-events-none"
+                        style={{ top: `${((ctv.cy - ctv.ry - 15) / 340) * 100}%`, left: `${((ctv.cx + 10) / 340) * 100}%` }}>
+                        CTV +{Math.round((ctv.rx - gtv.rx) * 0.5)}mm
                       </div>
                       <div className="absolute text-[10px] font-medium text-medical-amber" style={{ top: "52%", left: "13%" }}>
                         <AlertCircle className="w-3 h-3 inline mr-0.5" />Cochlea
                       </div>
-                      <div className="absolute text-[10px] font-medium text-medical-amber" style={{ top: "38%", left: "13%" }}>
-                        N.VII
-                      </div>
+                      <div className="absolute text-[10px] font-medium text-medical-amber" style={{ top: "38%", left: "13%" }}>N.VII</div>
                     </div>
                   </div>
                   <div className="absolute top-3 left-3 text-[10px] text-muted-foreground/60 font-mono space-y-0.5">
-                    <p>SE: 4 / IM: 128</p>
-                    <p>TR: 450ms TE: 15ms</p>
-                    <p>Slice: 2.0mm</p>
-                    <p>{activeView.toUpperCase()}</p>
+                    <p>SE: 4 / IM: 128</p><p>TR: 450ms TE: 15ms</p><p>Slice: 2.0mm</p><p>{activeView.toUpperCase()}</p>
                   </div>
                   <div className="absolute top-3 right-3 text-[10px] text-muted-foreground/60 font-mono text-right space-y-0.5">
-                    <p>{selectedPatient.name}</p>
-                    <p>{selectedPatient.id}</p>
-                    <p>MRI T1 + Gd</p>
+                    <p>{selectedPatient.name}</p><p>{selectedPatient.id}</p><p>MRI T1 + Gd</p>
                   </div>
                 </>
               )}
-              {/* Scan line */}
               <div className="scan-line absolute inset-0 pointer-events-none" />
-              {/* Accuracy badge */}
               <div className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-card/80 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-border text-[10px]">
                 <Crosshair className="w-3 h-3 text-medical-green" />
                 <span className="text-muted-foreground">Segmenteringsnoggrannhet:</span>
@@ -382,7 +395,7 @@ const ImageAnalysis = () => {
             </div>
           </div>
 
-          {/* Upload area */}
+          {/* Upload */}
           <div className="card-medical border-dashed border-2 p-8 text-center">
             <Upload className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
             <p className="text-sm font-medium text-muted-foreground">Dra och släpp MRI/CT-bilder här</p>
@@ -392,7 +405,6 @@ const ImageAnalysis = () => {
 
         {/* Side panel */}
         <motion.div variants={item} className="space-y-4">
-          {/* Patient info */}
           <div className="card-medical p-4">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Patient</h3>
             <div className="space-y-2.5">
@@ -409,31 +421,30 @@ const ImageAnalysis = () => {
             </div>
           </div>
 
-          {/* Segmentation layers */}
           <div className="card-medical p-4">
             <div className="flex items-center gap-2 mb-3">
               <Layers className="w-4 h-4 text-medical-cyan" />
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Segmenteringslager</h3>
             </div>
             <div className="space-y-2">
-              {layers.map((layer) => (
-                <div key={layer.id} className="flex items-center justify-between py-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className={`w-2.5 h-2.5 rounded-full ${layer.color}`} />
-                    <span className="text-xs text-foreground">{layer.label}</span>
+              {layers.map((layer) => {
+                const vol = layer.id === "gtv" ? gtvVolume : layer.id === "ctv" ? ctvVolume : null;
+                return (
+                  <div key={layer.id} className="flex items-center justify-between py-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2.5 h-2.5 rounded-full ${layer.color}`} />
+                      <span className="text-xs text-foreground">{layer.label}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {vol !== null && <span className="text-[10px] text-muted-foreground font-mono">{vol} cm³</span>}
+                      <Switch checked={layer.enabled} onCheckedChange={() => toggleLayer(layer.id)} className="scale-75" />
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {layer.volume !== "—" && (
-                      <span className="text-[10px] text-muted-foreground">{layer.volume}</span>
-                    )}
-                    <Switch checked={layer.enabled} onCheckedChange={() => toggleLayer(layer.id)} className="scale-75" />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
-          {/* AI Segmentation metrics */}
           <div className="card-medical p-4">
             <div className="flex items-center gap-2 mb-3">
               <Brain className="w-4 h-4 text-medical-cyan" />
@@ -468,7 +479,6 @@ const ImageAnalysis = () => {
             </div>
           </div>
 
-          {/* Comparison scans */}
           <div className="card-medical p-4">
             <div className="flex items-center gap-2 mb-3">
               <Eye className="w-4 h-4 text-medical-purple" />
@@ -480,7 +490,7 @@ const ImageAnalysis = () => {
                   <p className="font-medium text-foreground">2024-12-15 — MRI T1+Gd</p>
                   <span className="text-[10px] text-medical-green">Senaste</span>
                 </div>
-                <p className="text-muted-foreground mt-0.5">Vol: 1.23 cm³</p>
+                <p className="text-muted-foreground mt-0.5">Vol: {gtvVolume} cm³</p>
               </button>
               <button className="w-full text-left p-2 rounded-lg hover:bg-muted/50 transition-colors border border-transparent hover:border-border">
                 <div className="flex items-center justify-between">

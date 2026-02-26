@@ -92,75 +92,187 @@ const ImageAnalysis = () => {
           {/* Main scan view */}
           <div className="card-medical overflow-hidden">
             <div className="relative h-[400px] md:h-[500px] bg-foreground/[0.03] medical-grid">
-              {compareMode && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
-                  <div className="absolute left-0 top-0 bottom-0 w-1/2 border-r-2 border-dashed border-medical-purple/40" />
-                  <div className="absolute top-2 left-2 text-[10px] font-semibold text-medical-purple bg-medical-purple/10 px-2 py-0.5 rounded">2024-12-15</div>
-                  <div className="absolute top-2 right-2 text-[10px] font-semibold text-medical-cyan bg-medical-cyan/10 px-2 py-0.5 rounded">2024-09-20</div>
+              {show3D ? (
+                /* 3D Visualization */
+                <div className="absolute inset-0 flex items-center justify-center" style={{ perspective: "800px" }}>
+                  <motion.div
+                    className="relative"
+                    style={{ transformStyle: "preserve-3d" }}
+                    animate={{ rotateY: [0, 360] }}
+                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                  >
+                    {/* Brain sphere - outer */}
+                    <div className="w-56 h-56 md:w-72 md:h-72 rounded-full border border-muted-foreground/15 relative" style={{ transformStyle: "preserve-3d" }}>
+                      {/* Equator ring */}
+                      <div className="absolute inset-0 rounded-full border-2 border-muted-foreground/10" style={{ transform: "rotateX(90deg)" }} />
+                      {/* Meridian rings */}
+                      <div className="absolute inset-0 rounded-full border border-muted-foreground/8" style={{ transform: "rotateY(45deg)" }} />
+                      <div className="absolute inset-0 rounded-full border border-muted-foreground/8" style={{ transform: "rotateY(-45deg)" }} />
+                      <div className="absolute inset-0 rounded-full border border-muted-foreground/8" style={{ transform: "rotateY(90deg)" }} />
+
+                      {/* Inner brain tissue */}
+                      <div className="absolute inset-4 rounded-full bg-muted-foreground/5 border border-muted-foreground/8" />
+                      <div className="absolute inset-8 rounded-full bg-muted-foreground/5 border border-muted-foreground/5" />
+
+                      {/* GTV tumor - pulsing red sphere */}
+                      {layers.find(l => l.id === "gtv")?.enabled && (
+                        <motion.div
+                          className="absolute w-8 h-8 md:w-10 md:h-10 rounded-full bg-medical-red/30 border-2 border-medical-red shadow-[0_0_20px_hsl(0_72%_51%/0.4)]"
+                          style={{ top: "28%", left: "22%", transformStyle: "preserve-3d", transform: "translateZ(30px)" }}
+                          animate={{ scale: [1, 1.15, 1], boxShadow: ["0 0 15px hsl(0 72% 51%/0.3)", "0 0 30px hsl(0 72% 51%/0.6)", "0 0 15px hsl(0 72% 51%/0.3)"] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                        />
+                      )}
+
+                      {/* CTV margin */}
+                      {layers.find(l => l.id === "ctv")?.enabled && (
+                        <div
+                          className="absolute w-14 h-14 md:w-16 md:h-16 rounded-full border-2 border-dashed border-medical-purple/40"
+                          style={{ top: "23%", left: "17%", transform: "translateZ(30px)" }}
+                        />
+                      )}
+
+                      {/* OAR markers */}
+                      {layers.find(l => l.id === "cochlea")?.enabled && (
+                        <motion.div
+                          className="absolute w-4 h-4 rounded-full bg-medical-amber/20 border-2 border-medical-amber/60"
+                          style={{ top: "55%", left: "18%", transform: "translateZ(20px)" }}
+                          animate={{ opacity: [0.6, 1, 0.6] }}
+                          transition={{ duration: 1.5, repeat: Infinity }}
+                        />
+                      )}
+                      {layers.find(l => l.id === "brainstem")?.enabled && (
+                        <div
+                          className="absolute w-10 h-6 rounded-full bg-medical-amber/10 border border-medical-amber/40"
+                          style={{ bottom: "18%", left: "38%", transform: "translateZ(10px)" }}
+                        />
+                      )}
+                      {layers.find(l => l.id === "facial")?.enabled && (
+                        <div
+                          className="absolute w-1 h-12 rounded-full bg-medical-amber/40"
+                          style={{ top: "30%", left: "25%", transform: "rotateZ(-15deg) translateZ(25px)" }}
+                        />
+                      )}
+
+                      {/* Beam paths - converging on tumor */}
+                      {[0, 40, 80, 120, 160, 200, 240, 280, 320].map((angle, i) => {
+                        const rad = (angle * Math.PI) / 180;
+                        const r = 140;
+                        const cx = 50 + Math.cos(rad) * (r / 2.8);
+                        const cy = 50 + Math.sin(rad) * (r / 2.8);
+                        return (
+                          <motion.div
+                            key={i}
+                            className="absolute h-px origin-right"
+                            style={{
+                              width: "80px",
+                              top: `${35 + Math.sin(rad) * 30}%`,
+                              left: `${28 + Math.cos(rad) * 30}%`,
+                              transform: `rotate(${angle + 180}deg) translateZ(${15 + i * 2}px)`,
+                              background: `linear-gradient(90deg, transparent, hsl(187 80% 42% / 0.5))`,
+                            }}
+                            animate={{ opacity: [0.2, 0.6, 0.2] }}
+                            transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.12 }}
+                          />
+                        );
+                      })}
+
+                      {/* Center crosshair */}
+                      <motion.div
+                        className="absolute w-4 h-4 border-2 border-medical-cyan rounded-full"
+                        style={{ top: "32%", left: "28%", transform: "translateZ(30px)" }}
+                        animate={{ scale: [1, 1.3, 1], opacity: [0.6, 1, 0.6] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                      />
+                    </div>
+                  </motion.div>
+
+                  {/* 3D labels */}
+                  <div className="absolute top-4 left-4 space-y-1">
+                    <div className="text-[10px] font-semibold text-medical-cyan bg-medical-cyan/10 px-2 py-0.5 rounded border border-medical-cyan/20">3D-rekonstruktion</div>
+                    <div className="text-[10px] text-muted-foreground">{selectedPatient.name} — {selectedPatient.diagnosis}</div>
+                  </div>
+                  <div className="absolute top-4 right-4 text-[10px] text-muted-foreground/60 font-mono text-right space-y-0.5">
+                    <p>Volym: 1.23 cm³</p>
+                    <p>9 strålbanor visade</p>
+                    <p>Auto-rotation aktiv</p>
+                  </div>
                 </div>
+              ) : (
+                /* 2D Scan view */
+                <>
+                  {compareMode && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+                      <div className="absolute left-0 top-0 bottom-0 w-1/2 border-r-2 border-dashed border-medical-purple/40" />
+                      <div className="absolute top-2 left-2 text-[10px] font-semibold text-medical-purple bg-medical-purple/10 px-2 py-0.5 rounded">2024-12-15</div>
+                      <div className="absolute top-2 right-2 text-[10px] font-semibold text-medical-cyan bg-medical-cyan/10 px-2 py-0.5 rounded">2024-09-20</div>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="relative">
+                      <svg width="340" height="340" viewBox="0 0 340 340" className="opacity-90">
+                        <ellipse cx="170" cy="170" rx="145" ry="155" fill="none" stroke="hsl(215 20% 60%)" strokeWidth="1.5" opacity="0.4" />
+                        <ellipse cx="170" cy="170" rx="130" ry="140" fill="none" stroke="hsl(215 20% 60%)" strokeWidth="0.5" opacity="0.2" />
+                        <ellipse cx="170" cy="165" rx="120" ry="125" fill="hsl(215 15% 45%)" opacity="0.15" />
+                        <ellipse cx="170" cy="170" rx="90" ry="100" fill="hsl(215 15% 40%)" opacity="0.1" />
+                        <ellipse cx="155" cy="155" rx="15" ry="30" fill="hsl(215 20% 30%)" opacity="0.15" transform="rotate(-5 155 155)" />
+                        <ellipse cx="185" cy="155" rx="15" ry="30" fill="hsl(215 20% 30%)" opacity="0.15" transform="rotate(5 185 155)" />
+                        {/* GTV */}
+                        {layers.find(l => l.id === "gtv")?.enabled && (
+                          <motion.ellipse cx="120" cy="130" rx="18" ry="15" fill="hsl(0 72% 51%)" opacity="0.35" stroke="hsl(0 72% 51%)" strokeWidth="2"
+                            animate={{ opacity: [0.3, 0.5, 0.3] }} transition={{ duration: 2, repeat: Infinity }} />
+                        )}
+                        {/* CTV */}
+                        {layers.find(l => l.id === "ctv")?.enabled && (
+                          <motion.ellipse cx="120" cy="130" rx="26" ry="22" fill="none" stroke="hsl(260 55% 50%)" strokeWidth="1.5" strokeDasharray="4 3"
+                            animate={{ strokeDashoffset: [0, -14] }} transition={{ duration: 3, repeat: Infinity, ease: "linear" }} />
+                        )}
+                        {/* AI contour */}
+                        <motion.ellipse cx="120" cy="130" rx="22" ry="19" fill="none" stroke="hsl(187 80% 42%)" strokeWidth="1.5" strokeDasharray="4 2"
+                          animate={{ strokeDashoffset: [0, -12] }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} />
+                        {/* OARs */}
+                        {layers.find(l => l.id === "cochlea")?.enabled && (
+                          <circle cx="100" cy="190" r="8" fill="hsl(38 92% 50%)" opacity="0.15" stroke="hsl(38 92% 50%)" strokeWidth="1.5" />
+                        )}
+                        {layers.find(l => l.id === "brainstem")?.enabled && (
+                          <ellipse cx="170" cy="220" rx="22" ry="14" fill="hsl(38 92% 50%)" opacity="0.08" stroke="hsl(38 92% 50%)" strokeWidth="1" strokeDasharray="3 2" />
+                        )}
+                        {layers.find(l => l.id === "facial")?.enabled && (
+                          <path d="M105 145 Q95 165 100 185" fill="none" stroke="hsl(38 92% 50%)" strokeWidth="1.5" opacity="0.6" />
+                        )}
+                        <line x1="170" y1="30" x2="170" y2="310" stroke="hsl(187 80% 42%)" strokeWidth="0.5" opacity="0.3" strokeDasharray="6 4" />
+                        <line x1="0" y1="170" x2="340" y2="170" stroke="hsl(215 20% 60%)" strokeWidth="0.3" opacity="0.3" />
+                        <line x1="170" y1="0" x2="170" y2="340" stroke="hsl(215 20% 60%)" strokeWidth="0.3" opacity="0.3" />
+                      </svg>
+                      <div className="absolute text-[10px] font-medium text-medical-red" style={{ top: "22%", left: "18%" }}>
+                        GTV 14mm
+                      </div>
+                      <div className="absolute text-[10px] font-medium text-medical-purple" style={{ top: "18%", left: "30%" }}>
+                        CTV +3mm
+                      </div>
+                      <div className="absolute text-[10px] font-medium text-medical-amber" style={{ top: "52%", left: "13%" }}>
+                        <AlertCircle className="w-3 h-3 inline mr-0.5" />Cochlea
+                      </div>
+                      <div className="absolute text-[10px] font-medium text-medical-amber" style={{ top: "38%", left: "13%" }}>
+                        N.VII
+                      </div>
+                    </div>
+                  </div>
+                  <div className="absolute top-3 left-3 text-[10px] text-muted-foreground/60 font-mono space-y-0.5">
+                    <p>SE: 4 / IM: 128</p>
+                    <p>TR: 450ms TE: 15ms</p>
+                    <p>Slice: 2.0mm</p>
+                    <p>{activeView.toUpperCase()}</p>
+                  </div>
+                  <div className="absolute top-3 right-3 text-[10px] text-muted-foreground/60 font-mono text-right space-y-0.5">
+                    <p>{selectedPatient.name}</p>
+                    <p>{selectedPatient.id}</p>
+                    <p>MRI T1 + Gd</p>
+                  </div>
+                </>
               )}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="relative">
-                  <svg width="340" height="340" viewBox="0 0 340 340" className="opacity-90">
-                    <ellipse cx="170" cy="170" rx="145" ry="155" fill="none" stroke="hsl(215 20% 60%)" strokeWidth="1.5" opacity="0.4" />
-                    <ellipse cx="170" cy="170" rx="130" ry="140" fill="none" stroke="hsl(215 20% 60%)" strokeWidth="0.5" opacity="0.2" />
-                    <ellipse cx="170" cy="165" rx="120" ry="125" fill="hsl(215 15% 45%)" opacity="0.15" />
-                    <ellipse cx="170" cy="170" rx="90" ry="100" fill="hsl(215 15% 40%)" opacity="0.1" />
-                    <ellipse cx="155" cy="155" rx="15" ry="30" fill="hsl(215 20% 30%)" opacity="0.15" transform="rotate(-5 155 155)" />
-                    <ellipse cx="185" cy="155" rx="15" ry="30" fill="hsl(215 20% 30%)" opacity="0.15" transform="rotate(5 185 155)" />
-                    {/* GTV */}
-                    {layers.find(l => l.id === "gtv")?.enabled && (
-                      <motion.ellipse cx="120" cy="130" rx="18" ry="15" fill="hsl(0 72% 51%)" opacity="0.35" stroke="hsl(0 72% 51%)" strokeWidth="2"
-                        animate={{ opacity: [0.3, 0.5, 0.3] }} transition={{ duration: 2, repeat: Infinity }} />
-                    )}
-                    {/* CTV */}
-                    {layers.find(l => l.id === "ctv")?.enabled && (
-                      <motion.ellipse cx="120" cy="130" rx="26" ry="22" fill="none" stroke="hsl(260 55% 50%)" strokeWidth="1.5" strokeDasharray="4 3"
-                        animate={{ strokeDashoffset: [0, -14] }} transition={{ duration: 3, repeat: Infinity, ease: "linear" }} />
-                    )}
-                    {/* AI contour */}
-                    <motion.ellipse cx="120" cy="130" rx="22" ry="19" fill="none" stroke="hsl(187 80% 42%)" strokeWidth="1.5" strokeDasharray="4 2"
-                      animate={{ strokeDashoffset: [0, -12] }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} />
-                    {/* OARs */}
-                    {layers.find(l => l.id === "cochlea")?.enabled && (
-                      <circle cx="100" cy="190" r="8" fill="hsl(38 92% 50%)" opacity="0.15" stroke="hsl(38 92% 50%)" strokeWidth="1.5" />
-                    )}
-                    {layers.find(l => l.id === "brainstem")?.enabled && (
-                      <ellipse cx="170" cy="220" rx="22" ry="14" fill="hsl(38 92% 50%)" opacity="0.08" stroke="hsl(38 92% 50%)" strokeWidth="1" strokeDasharray="3 2" />
-                    )}
-                    {layers.find(l => l.id === "facial")?.enabled && (
-                      <path d="M105 145 Q95 165 100 185" fill="none" stroke="hsl(38 92% 50%)" strokeWidth="1.5" opacity="0.6" />
-                    )}
-                    <line x1="170" y1="30" x2="170" y2="310" stroke="hsl(187 80% 42%)" strokeWidth="0.5" opacity="0.3" strokeDasharray="6 4" />
-                    <line x1="0" y1="170" x2="340" y2="170" stroke="hsl(215 20% 60%)" strokeWidth="0.3" opacity="0.3" />
-                    <line x1="170" y1="0" x2="170" y2="340" stroke="hsl(215 20% 60%)" strokeWidth="0.3" opacity="0.3" />
-                  </svg>
-                  <div className="absolute text-[10px] font-medium text-medical-red" style={{ top: "22%", left: "18%" }}>
-                    GTV 14mm
-                  </div>
-                  <div className="absolute text-[10px] font-medium text-medical-purple" style={{ top: "18%", left: "30%" }}>
-                    CTV +3mm
-                  </div>
-                  <div className="absolute text-[10px] font-medium text-medical-amber" style={{ top: "52%", left: "13%" }}>
-                    <AlertCircle className="w-3 h-3 inline mr-0.5" />Cochlea
-                  </div>
-                  <div className="absolute text-[10px] font-medium text-medical-amber" style={{ top: "38%", left: "13%" }}>
-                    N.VII
-                  </div>
-                </div>
-              </div>
+              {/* Scan line */}
               <div className="scan-line absolute inset-0 pointer-events-none" />
-              <div className="absolute top-3 left-3 text-[10px] text-muted-foreground/60 font-mono space-y-0.5">
-                <p>SE: 4 / IM: 128</p>
-                <p>TR: 450ms TE: 15ms</p>
-                <p>Slice: 2.0mm</p>
-                <p>{activeView.toUpperCase()}</p>
-              </div>
-              <div className="absolute top-3 right-3 text-[10px] text-muted-foreground/60 font-mono text-right space-y-0.5">
-                <p>{selectedPatient.name}</p>
-                <p>{selectedPatient.id}</p>
-                <p>MRI T1 + Gd</p>
-              </div>
               {/* Accuracy badge */}
               <div className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-card/80 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-border text-[10px]">
                 <Crosshair className="w-3 h-3 text-medical-green" />

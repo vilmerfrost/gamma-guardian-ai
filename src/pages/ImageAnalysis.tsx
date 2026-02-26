@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import { patients } from "@/data/mockData";
 import {
@@ -18,6 +18,9 @@ import {
   Box,
   GitCompare,
   Crosshair,
+  Pause,
+  Play,
+  Hand,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -42,10 +45,52 @@ const ImageAnalysis = () => {
   const [layers, setLayers] = useState(segmentationLayers);
   const [show3D, setShow3D] = useState(false);
   const [compareMode, setCompareMode] = useState(false);
+  const [isAutoRotating, setIsAutoRotating] = useState(true);
+  const [rotateX, setRotateX] = useState(-15);
+  const [rotateY, setRotateY] = useState(0);
+  const isDragging = useRef(false);
+  const lastMouse = useRef({ x: 0, y: 0 });
+  const autoRotateRef = useRef<number | null>(null);
 
   const toggleLayer = (id: string) => {
     setLayers(prev => prev.map(l => l.id === id ? { ...l, enabled: !l.enabled } : l));
   };
+
+  // Auto-rotation
+  useEffect(() => {
+    if (show3D && isAutoRotating && !isDragging.current) {
+      const tick = () => {
+        setRotateY(prev => (prev + 0.3) % 360);
+        autoRotateRef.current = requestAnimationFrame(tick);
+      };
+      autoRotateRef.current = requestAnimationFrame(tick);
+      return () => {
+        if (autoRotateRef.current) cancelAnimationFrame(autoRotateRef.current);
+      };
+    }
+    return () => {
+      if (autoRotateRef.current) cancelAnimationFrame(autoRotateRef.current);
+    };
+  }, [show3D, isAutoRotating]);
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    isDragging.current = true;
+    lastMouse.current = { x: e.clientX, y: e.clientY };
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  }, []);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!isDragging.current) return;
+    const dx = e.clientX - lastMouse.current.x;
+    const dy = e.clientY - lastMouse.current.y;
+    lastMouse.current = { x: e.clientX, y: e.clientY };
+    setRotateY(prev => prev + dx * 0.5);
+    setRotateX(prev => Math.max(-60, Math.min(60, prev - dy * 0.5)));
+  }, []);
+
+  const handlePointerUp = useCallback(() => {
+    isDragging.current = false;
+  }, []);
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6 max-w-7xl mx-auto">
@@ -93,13 +138,21 @@ const ImageAnalysis = () => {
           <div className="card-medical overflow-hidden">
             <div className="relative h-[400px] md:h-[500px] bg-foreground/[0.03] medical-grid">
               {show3D ? (
-                /* 3D Visualization */
-                <div className="absolute inset-0 flex items-center justify-center" style={{ perspective: "800px" }}>
-                  <motion.div
+                /* 3D Visualization with drag interaction */
+                <div
+                  className="absolute inset-0 flex items-center justify-center select-none"
+                  style={{ perspective: "800px", cursor: isDragging.current ? "grabbing" : "grab" }}
+                  onPointerDown={handlePointerDown}
+                  onPointerMove={handlePointerMove}
+                  onPointerUp={handlePointerUp}
+                  onPointerLeave={handlePointerUp}
+                >
+                  <div
                     className="relative"
-                    style={{ transformStyle: "preserve-3d" }}
-                    animate={{ rotateY: [0, 360] }}
-                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                    style={{
+                      transformStyle: "preserve-3d",
+                      transform: `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
+                    }}
                   >
                     {/* Brain sphere - outer */}
                     <div className="w-56 h-56 md:w-72 md:h-72 rounded-full border border-muted-foreground/15 relative" style={{ transformStyle: "preserve-3d" }}>
@@ -114,7 +167,7 @@ const ImageAnalysis = () => {
                       <div className="absolute inset-4 rounded-full bg-muted-foreground/5 border border-muted-foreground/8" />
                       <div className="absolute inset-8 rounded-full bg-muted-foreground/5 border border-muted-foreground/5" />
 
-                      {/* GTV tumor - pulsing red sphere */}
+                      {/* GTV tumor */}
                       {layers.find(l => l.id === "gtv")?.enabled && (
                         <motion.div
                           className="absolute w-8 h-8 md:w-10 md:h-10 rounded-full bg-medical-red/30 border-2 border-medical-red shadow-[0_0_20px_hsl(0_72%_51%/0.4)]"
@@ -154,12 +207,9 @@ const ImageAnalysis = () => {
                         />
                       )}
 
-                      {/* Beam paths - converging on tumor */}
+                      {/* Beam paths */}
                       {[0, 40, 80, 120, 160, 200, 240, 280, 320].map((angle, i) => {
                         const rad = (angle * Math.PI) / 180;
-                        const r = 140;
-                        const cx = 50 + Math.cos(rad) * (r / 2.8);
-                        const cy = 50 + Math.sin(rad) * (r / 2.8);
                         return (
                           <motion.div
                             key={i}
@@ -185,17 +235,41 @@ const ImageAnalysis = () => {
                         transition={{ duration: 1.5, repeat: Infinity }}
                       />
                     </div>
-                  </motion.div>
+                  </div>
 
-                  {/* 3D labels */}
-                  <div className="absolute top-4 left-4 space-y-1">
+                  {/* 3D controls overlay */}
+                  <div className="absolute top-4 left-4 space-y-2 pointer-events-auto">
                     <div className="text-[10px] font-semibold text-medical-cyan bg-medical-cyan/10 px-2 py-0.5 rounded border border-medical-cyan/20">3D-rekonstruktion</div>
                     <div className="text-[10px] text-muted-foreground">{selectedPatient.name} — {selectedPatient.diagnosis}</div>
+                    <div className="flex items-center gap-1.5 mt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={`h-7 text-[10px] gap-1 ${isAutoRotating ? "border-medical-cyan text-medical-cyan" : ""}`}
+                        onClick={(e) => { e.stopPropagation(); setIsAutoRotating(!isAutoRotating); }}
+                      >
+                        {isAutoRotating ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+                        {isAutoRotating ? "Pausa" : "Rotera"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-[10px] gap-1"
+                        onClick={(e) => { e.stopPropagation(); setRotateX(-15); setRotateY(0); }}
+                      >
+                        <RotateCcw className="w-3 h-3" />Återställ
+                      </Button>
+                    </div>
                   </div>
                   <div className="absolute top-4 right-4 text-[10px] text-muted-foreground/60 font-mono text-right space-y-0.5">
                     <p>Volym: 1.23 cm³</p>
                     <p>9 strålbanor visade</p>
-                    <p>Auto-rotation aktiv</p>
+                    <p>{isAutoRotating ? "Auto-rotation" : "Manuell rotation"}</p>
+                  </div>
+                  {/* Drag hint */}
+                  <div className="absolute bottom-3 left-3 flex items-center gap-1.5 text-[10px] text-muted-foreground/50 pointer-events-none">
+                    <Hand className="w-3.5 h-3.5" />
+                    Dra för att rotera — Klicka Pausa/Rotera för att växla
                   </div>
                 </div>
               ) : (

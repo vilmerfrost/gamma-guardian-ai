@@ -12,6 +12,7 @@ import AIAdvisor from "./pages/AIAdvisor";
 import ReportGenerator from "./pages/ReportGenerator";
 import SettingsPage from "./pages/Settings";
 import Auth from "./pages/Auth";
+import LandingPage from "./pages/LandingPage";
 
 const queryClient = new QueryClient();
 
@@ -48,7 +49,7 @@ function ProtectedRoutes() {
 function AuthRoute() {
   const { session, loading } = useAuth();
   if (loading) return null;
-  if (session) return <Navigate to="/" replace />;
+  if (session) return <Navigate to="/dashboard" replace />;
   return <Auth />;
 }
 
@@ -60,8 +61,9 @@ const App = () => (
       <AuthProvider>
         <BrowserRouter>
           <Routes>
+            <Route path="/" element={<LandingPage />} />
             <Route path="/auth" element={<AuthRoute />} />
-            <Route path="/*" element={<ProtectedRoutes />} />
+            <Route path="/dashboard/*" element={<ProtectedRoutes />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

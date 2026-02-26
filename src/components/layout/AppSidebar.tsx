@@ -24,15 +24,15 @@ import {
 } from "lucide-react";
 
 const mainNav = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Bildanalys", url: "/image-analysis", icon: ScanLine },
-  { title: "Planering", url: "/planning", icon: Target },
-  { title: "AI Advisor", url: "/ai-advisor", icon: MessageSquare },
-  { title: "Rapporter", url: "/reports", icon: FileText },
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Bildanalys", url: "/dashboard/image-analysis", icon: ScanLine },
+  { title: "Planering", url: "/dashboard/planning", icon: Target },
+  { title: "AI Advisor", url: "/dashboard/ai-advisor", icon: MessageSquare },
+  { title: "Rapporter", url: "/dashboard/reports", icon: FileText },
 ];
 
 const settingsNav = [
-  { title: "Inställningar", url: "/settings", icon: Settings },
+  { title: "Inställningar", url: "/dashboard/settings", icon: Settings },
 ];
 
 export function AppSidebar() {
@@ -68,7 +68,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink
                       to={item.url}
-                      end={item.url === "/"}
+                      end={item.url === "/dashboard"}
                       className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 transition-all duration-200 hover:text-sidebar-primary-foreground hover:bg-sidebar-accent"
                       activeClassName="text-sidebar-primary bg-sidebar-accent shadow-sm"
                     >

@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, Suspense, lazy } from "react";
 import { motion } from "framer-motion";
 import { patients } from "@/data/mockData";
 import {
@@ -11,6 +11,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { ellipseVolume } from "@/lib/doseCalculations";
 import { logAuditEvent } from "@/lib/auditLog";
+
+const BrainScene = lazy(() => import("@/components/BrainScene"));
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } };
 const item = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } };
@@ -209,93 +211,40 @@ const ImageAnalysis = () => {
           <div className="card-medical overflow-hidden">
             <div className="relative h-[400px] md:h-[500px] bg-foreground/[0.03] medical-grid">
               {show3D ? (
-                <div
-                  className="absolute inset-0 flex items-center justify-center select-none"
-                  style={{ perspective: "800px", cursor: isDragging.current ? "grabbing" : "grab" }}
-                  onPointerDown={handlePointerDown3D}
-                  onPointerMove={handlePointerMove3D}
-                  onPointerUp={handlePointerUp3D}
-                  onPointerLeave={handlePointerUp3D}
-                  onWheel={handleWheel}
-                >
-                  <div className="relative transition-transform" style={{ transformStyle: "preserve-3d", transform: `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(${zoom})` }}>
-                    <div className="w-56 h-56 md:w-72 md:h-72 rounded-full border border-muted-foreground/15 relative" style={{ transformStyle: "preserve-3d" }}>
-                      <div className="absolute inset-0 rounded-full border-2 border-muted-foreground/10" style={{ transform: "rotateX(90deg)" }} />
-                      <div className="absolute inset-0 rounded-full border border-muted-foreground/8" style={{ transform: "rotateY(45deg)" }} />
-                      <div className="absolute inset-0 rounded-full border border-muted-foreground/8" style={{ transform: "rotateY(-45deg)" }} />
-                      <div className="absolute inset-0 rounded-full border border-muted-foreground/8" style={{ transform: "rotateY(90deg)" }} />
-                      <div className="absolute inset-4 rounded-full bg-muted-foreground/5 border border-muted-foreground/8" />
-                      <div className="absolute inset-8 rounded-full bg-muted-foreground/5 border border-muted-foreground/5" />
-                      {layers.find(l => l.id === "gtv")?.enabled && (
-                        <motion.div className="absolute w-8 h-8 md:w-10 md:h-10 rounded-full bg-medical-red/30 border-2 border-medical-red shadow-[0_0_20px_hsl(0_72%_51%/0.4)]"
-                          style={{ top: "28%", left: "22%", transformStyle: "preserve-3d", transform: "translateZ(30px)" }}
-                          animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 2, repeat: Infinity }} />
-                      )}
-                      {layers.find(l => l.id === "ctv")?.enabled && (
-                        <div className="absolute w-14 h-14 md:w-16 md:h-16 rounded-full border-2 border-dashed border-medical-purple/40"
-                          style={{ top: "23%", left: "17%", transform: "translateZ(30px)" }} />
-                      )}
-                      {layers.find(l => l.id === "cochlea")?.enabled && (
-                        <motion.div className="absolute w-4 h-4 rounded-full bg-medical-amber/20 border-2 border-medical-amber/60"
-                          style={{ top: "55%", left: "18%", transform: "translateZ(20px)" }}
-                          animate={{ opacity: [0.6, 1, 0.6] }} transition={{ duration: 1.5, repeat: Infinity }} />
-                      )}
-                      {layers.find(l => l.id === "brainstem")?.enabled && (
-                        <div className="absolute w-10 h-6 rounded-full bg-medical-amber/10 border border-medical-amber/40"
-                          style={{ bottom: "18%", left: "38%", transform: "translateZ(10px)" }} />
-                      )}
-                      {layers.find(l => l.id === "facial")?.enabled && (
-                        <div className="absolute w-1 h-12 rounded-full bg-medical-amber/40"
-                          style={{ top: "30%", left: "25%", transform: "rotateZ(-15deg) translateZ(25px)" }} />
-                      )}
-                      {[0, 40, 80, 120, 160, 200, 240, 280, 320].map((angle, i) => {
-                        const rad = (angle * Math.PI) / 180;
-                        return (
-                          <motion.div key={i} className="absolute h-px origin-right"
-                            style={{ width: "80px", top: `${35 + Math.sin(rad) * 30}%`, left: `${28 + Math.cos(rad) * 30}%`,
-                              transform: `rotate(${angle + 180}deg) translateZ(${15 + i * 2}px)`,
-                              background: `linear-gradient(90deg, transparent, hsl(187 80% 42% / 0.5))` }}
-                            animate={{ opacity: [0.2, 0.6, 0.2] }} transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.12 }} />
-                        );
-                      })}
-                      <motion.div className="absolute w-4 h-4 border-2 border-medical-cyan rounded-full"
-                        style={{ top: "32%", left: "28%", transform: "translateZ(30px)" }}
-                        animate={{ scale: [1, 1.3, 1], opacity: [0.6, 1, 0.6] }} transition={{ duration: 1.5, repeat: Infinity }} />
+                <div className="absolute inset-0">
+                  <Suspense fallback={
+                    <div className="w-full h-full flex items-center justify-center">
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-6 h-6 border-2 border-medical-cyan border-t-transparent rounded-full animate-spin" />
+                        <span className="text-xs text-muted-foreground">Laddar 3D...</span>
+                      </div>
                     </div>
-                  </div>
-                  {/* 3D controls */}
-                  <div className="absolute top-4 left-4 space-y-2 pointer-events-auto">
-                    <div className="text-[10px] font-semibold text-medical-cyan bg-medical-cyan/10 px-2 py-0.5 rounded border border-medical-cyan/20">3D-rekonstruktion</div>
+                  }>
+                    <BrainScene
+                      showGTV={layers.find(l => l.id === "gtv")?.enabled}
+                      showCTV={layers.find(l => l.id === "ctv")?.enabled}
+                      showOAR={layers.find(l => l.id === "cochlea")?.enabled || layers.find(l => l.id === "brainstem")?.enabled}
+                      autoRotate={isAutoRotating}
+                    />
+                  </Suspense>
+                  {/* 3D controls overlay */}
+                  <div className="absolute top-4 left-4 space-y-2 pointer-events-auto z-10">
+                    <div className="text-[10px] font-semibold text-medical-cyan bg-medical-cyan/10 px-2 py-0.5 rounded border border-medical-cyan/20">3D-rekonstruktion (WebGL)</div>
                     <div className="text-[10px] text-muted-foreground">{selectedPatient.name} — {selectedPatient.diagnosis}</div>
                     <div className="flex items-center gap-1.5 mt-2">
                       <Button variant="outline" size="sm" className={`h-7 text-[10px] gap-1 ${isAutoRotating ? "border-medical-cyan text-medical-cyan" : ""}`}
-                        onClick={(e) => { e.stopPropagation(); setIsAutoRotating(!isAutoRotating); }}>
+                        onClick={() => setIsAutoRotating(!isAutoRotating)}>
                         {isAutoRotating ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
                         {isAutoRotating ? "Pausa" : "Rotera"}
                       </Button>
-                      <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1"
-                        onClick={(e) => { e.stopPropagation(); setRotateX(-15); setRotateY(0); setZoom(1); }}>
-                        <RotateCcw className="w-3 h-3" />Återställ
-                      </Button>
-                      <div className="flex items-center gap-0.5 ml-1">
-                        <Button variant="outline" size="sm" className="h-7 w-7 p-0"
-                          onClick={(e) => { e.stopPropagation(); setZoom(prev => Math.min(3, prev + 0.2)); }}>
-                          <ZoomIn className="w-3 h-3" />
-                        </Button>
-                        <span className="text-[9px] text-muted-foreground w-8 text-center font-mono">{Math.round(zoom * 100)}%</span>
-                        <Button variant="outline" size="sm" className="h-7 w-7 p-0"
-                          onClick={(e) => { e.stopPropagation(); setZoom(prev => Math.max(0.4, prev - 0.2)); }}>
-                          <ZoomOut className="w-3 h-3" />
-                        </Button>
-                      </div>
                     </div>
                   </div>
-                  <div className="absolute top-4 right-4 text-[10px] text-muted-foreground/60 font-mono text-right space-y-0.5">
+                  <div className="absolute top-4 right-4 text-[10px] text-muted-foreground/60 font-mono text-right space-y-0.5 z-10">
                     <p>Volym: {gtvVolume} cm³</p>
-                    <p>9 strålbanor visade</p>
-                    <p>{isAutoRotating ? "Auto-rotation" : "Manuell rotation"}</p>
+                    <p>9 strålbanor</p>
+                    <p>{isAutoRotating ? "Auto-rotation" : "Manuell"}</p>
                   </div>
-                  <div className="absolute bottom-3 left-3 flex items-center gap-1.5 text-[10px] text-muted-foreground/50 pointer-events-none">
+                  <div className="absolute bottom-3 left-3 flex items-center gap-1.5 text-[10px] text-muted-foreground/50 pointer-events-none z-10">
                     <Hand className="w-3.5 h-3.5" /> Dra för att rotera — Scrolla för att zooma
                   </div>
                 </div>

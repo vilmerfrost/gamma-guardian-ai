@@ -3,10 +3,12 @@ import { motion } from "framer-motion";
 import { patients, treatmentPlans } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import ReactMarkdown from "react-markdown";
 import {
   FileText, Download, Printer, CheckCircle2, Clock, User, Target,
   Shield, AlertTriangle, Brain, HeartPulse, FileCheck, Scale, ShieldCheck,
+  BookOpen, Stethoscope, Activity, BarChart3, ListChecks, ClipboardCheck,
 } from "lucide-react";
 import { logAuditEvent } from "@/lib/auditLog";
 import { toast } from "sonner";
@@ -99,6 +101,7 @@ const ReportGenerator = () => {
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6 max-w-5xl mx-auto">
+      {/* Header */}
       <motion.div variants={item} className="flex items-end justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground tracking-tight">Rapportgenerator</h1>
@@ -167,17 +170,18 @@ const ReportGenerator = () => {
       {(aiReport || !isGenerating) && (
         <motion.div variants={item} className="card-medical-elevated">
           {/* Report header */}
-          <div className="p-6 border-b border-border gradient-hero text-primary-foreground rounded-t-xl">
+          <div className="p-8 border-b border-border gradient-hero text-primary-foreground rounded-t-xl">
             <div className="flex items-center justify-between">
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <p className="text-[10px] font-semibold uppercase tracking-widest opacity-60">Behandlingsrapport</p>
+                <div className="flex items-center gap-2 mb-2">
+                  <BookOpen className="w-4 h-4 opacity-60" />
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] opacity-60">Behandlingsrapport</p>
                   <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/10 font-medium">CE-märkt</span>
                 </div>
-                <h2 className="text-lg font-bold mt-1">Gamma Knife Radiosurgery</h2>
-                <p className="text-xs opacity-70 mt-0.5">GammaAI — Automatisk rapportgenerering v2.1</p>
+                <h2 className="text-xl font-bold mt-1">Gamma Knife Radiosurgery</h2>
+                <p className="text-sm opacity-70 mt-1">GammaAI — Automatisk rapportgenerering v2.1</p>
               </div>
-              <div className="text-right text-xs opacity-70">
+              <div className="text-right text-xs opacity-70 space-y-1">
                 <p>Rapport-ID: GK-2025-{patient.id.slice(-3)}</p>
                 <p>Datum: {new Date().toLocaleDateString("sv-SE")}</p>
                 <p className="flex items-center gap-1 justify-end mt-1">
@@ -187,23 +191,28 @@ const ReportGenerator = () => {
             </div>
           </div>
 
-          <div className="p-6 space-y-6">
+          <div className="p-8 space-y-8">
             {/* Static patient info section */}
             <section>
-              <div className="flex items-center gap-2 mb-3">
-                <User className="w-4 h-4 text-medical-cyan" />
-                <h3 className="text-sm font-semibold text-foreground">Patientinformation</h3>
+              <div className="flex items-center gap-2.5 mb-4">
+                <div className="w-7 h-7 rounded-lg bg-primary/5 flex items-center justify-center">
+                  <User className="w-4 h-4 text-primary" />
+                </div>
+                <h3 className="text-base font-semibold text-foreground">Patientinformation</h3>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                  { label: "Namn", value: patient.name },
-                  { label: "Ålder", value: `${patient.age} år` },
-                  { label: "Diagnos", value: patient.diagnosis },
-                  { label: "Lokalisation", value: patient.location },
+                  { label: "Namn", value: patient.name, icon: User },
+                  { label: "Ålder", value: `${patient.age} år`, icon: Activity },
+                  { label: "Diagnos", value: patient.diagnosis, icon: Stethoscope },
+                  { label: "Lokalisation", value: patient.location, icon: Target },
                 ].map((f, i) => (
-                  <div key={i} className="bg-muted/30 rounded-lg p-2.5">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{f.label}</p>
-                    <p className="text-xs font-medium text-foreground mt-0.5">{f.value}</p>
+                  <div key={i} className="bg-muted/30 rounded-xl p-4">
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <f.icon className="w-3 h-3 text-muted-foreground" />
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">{f.label}</p>
+                    </div>
+                    <p className="text-sm font-medium text-foreground">{f.value}</p>
                   </div>
                 ))}
               </div>
@@ -212,60 +221,160 @@ const ReportGenerator = () => {
             {/* AI-generated report content */}
             {aiReport ? (
               <section>
-                <div className="flex items-center gap-2 mb-3">
-                  <Brain className="w-4 h-4 text-medical-cyan" />
-                  <h3 className="text-sm font-semibold text-foreground">AI-genererad klinisk rapport</h3>
+                <div className="flex items-center gap-2.5 mb-5">
+                  <div className="w-7 h-7 rounded-lg bg-medical-cyan/10 flex items-center justify-center">
+                    <Brain className="w-4 h-4 text-medical-cyan" />
+                  </div>
+                  <h3 className="text-base font-semibold text-foreground">AI-genererad klinisk rapport</h3>
+                  {reportReady && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-medical-green/10 text-medical-green border border-medical-green/20 font-medium">
+                      Komplett
+                    </span>
+                  )}
                 </div>
-                <div className="bg-muted/20 rounded-lg p-4 prose prose-sm max-w-none text-xs [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-xs [&_p]:text-xs [&_li]:text-xs [&_strong]:text-foreground text-muted-foreground">
-                  <ReactMarkdown>{aiReport}</ReactMarkdown>
+                <div className="report-markdown bg-muted/10 rounded-xl border border-border/50 p-8">
+                  <ReactMarkdown
+                    components={{
+                      h1: ({ children }) => (
+                        <h1 className="text-xl font-bold text-foreground mt-8 mb-4 pb-3 border-b border-border flex items-center gap-2.5">
+                          <ClipboardCheck className="w-5 h-5 text-medical-cyan shrink-0" />
+                          {children}
+                        </h1>
+                      ),
+                      h2: ({ children }) => (
+                        <h2 className="text-lg font-semibold text-foreground mt-8 mb-3 pb-2 border-b border-border/50 flex items-center gap-2">
+                          <BarChart3 className="w-4 h-4 text-primary shrink-0" />
+                          {children}
+                        </h2>
+                      ),
+                      h3: ({ children }) => (
+                        <h3 className="text-sm font-semibold text-foreground mt-6 mb-2 flex items-center gap-2">
+                          <ListChecks className="w-3.5 h-3.5 text-medical-cyan shrink-0" />
+                          {children}
+                        </h3>
+                      ),
+                      p: ({ children }) => (
+                        <p className="text-sm text-muted-foreground leading-relaxed mb-4">{children}</p>
+                      ),
+                      strong: ({ children }) => (
+                        <strong className="font-semibold text-foreground">{children}</strong>
+                      ),
+                      em: ({ children }) => (
+                        <em className="italic text-muted-foreground">{children}</em>
+                      ),
+                      ul: ({ children }) => (
+                        <ul className="space-y-2 mb-5 ml-1">{children}</ul>
+                      ),
+                      ol: ({ children }) => (
+                        <ol className="space-y-2 mb-5 ml-1 list-decimal list-inside">{children}</ol>
+                      ),
+                      li: ({ children }) => (
+                        <li className="text-sm text-muted-foreground leading-relaxed flex items-start gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-medical-cyan/60 shrink-0 mt-2" />
+                          <span>{children}</span>
+                        </li>
+                      ),
+                      blockquote: ({ children }) => (
+                        <blockquote className="border-l-[3px] border-medical-cyan/40 pl-4 py-2 my-4 bg-medical-cyan/[0.03] rounded-r-lg">
+                          <div className="text-sm text-muted-foreground italic">{children}</div>
+                        </blockquote>
+                      ),
+                      hr: () => <hr className="my-6 border-border" />,
+                      table: ({ children }) => (
+                        <div className="my-5 rounded-xl border border-border overflow-hidden">
+                          <table className="w-full text-sm">{children}</table>
+                        </div>
+                      ),
+                      thead: ({ children }) => (
+                        <thead className="bg-muted/40">{children}</thead>
+                      ),
+                      th: ({ children }) => (
+                        <th className="text-left px-4 py-2.5 text-xs font-semibold text-foreground uppercase tracking-wider">{children}</th>
+                      ),
+                      td: ({ children }) => (
+                        <td className="px-4 py-2.5 text-sm text-muted-foreground border-t border-border/50">{children}</td>
+                      ),
+                      code: ({ children, className }) => {
+                        if (className) {
+                          return (
+                            <pre className="bg-muted/40 rounded-lg p-4 my-4 overflow-x-auto">
+                              <code className="text-xs font-mono text-foreground">{children}</code>
+                            </pre>
+                          );
+                        }
+                        return (
+                          <code className="text-xs font-mono bg-muted/50 px-1.5 py-0.5 rounded text-foreground">{children}</code>
+                        );
+                      },
+                    }}
+                  >
+                    {aiReport}
+                  </ReactMarkdown>
                 </div>
               </section>
             ) : (
-              <div className="text-center py-12 text-muted-foreground">
-                <Brain className="w-8 h-8 mx-auto mb-3 opacity-30" />
-                <p className="text-sm">Klicka "Generera rapport" för att skapa en AI-driven behandlingsrapport</p>
-                <p className="text-xs mt-1 opacity-60">Rapporten genereras i realtid med streaming</p>
+              <div className="text-center py-16 text-muted-foreground">
+                <Brain className="w-10 h-10 mx-auto mb-4 opacity-20" />
+                <p className="text-base font-medium">Klicka "Generera rapport" för att skapa en AI-driven behandlingsrapport</p>
+                <p className="text-sm mt-2 opacity-60">Rapporten genereras i realtid med streaming och inkluderar AI-transparens</p>
               </div>
             )}
 
             {/* Compliance section */}
-            <section className="border-t border-border pt-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <HeartPulse className="w-4 h-4 text-medical-green" />
-                      <h4 className="text-xs font-semibold text-foreground">Regulatorisk information</h4>
-                    </div>
-                    <div className="text-[10px] text-muted-foreground space-y-1">
-                      <p><strong className="text-foreground">Klassificering:</strong> Högrisk-AI (EU AI Act 2024/1689, Annex I, 5(b))</p>
-                      <p><strong className="text-foreground">System:</strong> GammaAI v2.1.0 — CE-märkt medicinteknisk programvara</p>
-                      <p><strong className="text-foreground">AI-modell:</strong> Gemini 3 Flash Preview — Lovable AI Gateway</p>
-                      <p><strong className="text-foreground">Transparens (Art. 13):</strong> AI förklarar resonemang steg för steg</p>
-                      <p><strong className="text-foreground">Mänsklig tillsyn (Art. 14):</strong> Kräver klinisk verifiering</p>
-                      <p><strong className="text-foreground">Loggning (Art. 12):</strong> Alla beslut spåras i audit-loggen</p>
-                    </div>
-                  </div>
+            <section className="border-t border-border pt-6">
+              <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <FileCheck className="w-4 h-4 text-medical-amber" />
-                    <h4 className="text-xs font-semibold text-foreground">Klinisk verifiering</h4>
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <div className="w-7 h-7 rounded-lg bg-medical-green/10 flex items-center justify-center">
+                      <HeartPulse className="w-4 h-4 text-medical-green" />
+                    </div>
+                    <h4 className="text-sm font-semibold text-foreground">Regulatorisk information</h4>
                   </div>
-                  <div className="bg-medical-amber/5 border border-medical-amber/20 rounded-lg p-3">
-                    <p className="text-[10px] text-muted-foreground">
-                      Denna rapport är AI-genererad och kräver verifiering och signatur av ansvarig läkare innan kliniskt bruk.
-                    </p>
-                    <div className="mt-2 pt-2 border-t border-medical-amber/10">
-                      <p className="text-[10px] text-muted-foreground">Signatur: _________________________</p>
-                      <p className="text-[10px] text-muted-foreground mt-1">Datum: _________________________</p>
+                  <div className="text-xs text-muted-foreground space-y-2 bg-muted/20 rounded-xl p-4">
+                    <p><strong className="text-foreground">Klassificering:</strong> Högrisk-AI (EU AI Act 2024/1689, Annex I, 5(b))</p>
+                    <p><strong className="text-foreground">System:</strong> GammaAI v2.1.0 — CE-märkt medicinteknisk programvara</p>
+                    <p><strong className="text-foreground">AI-modell:</strong> Gemini 3 Flash Preview — Lovable AI Gateway</p>
+                    <p><strong className="text-foreground">Transparens (Art. 13):</strong> AI förklarar resonemang steg för steg</p>
+                    <p><strong className="text-foreground">Mänsklig tillsyn (Art. 14):</strong> Kräver klinisk verifiering</p>
+                    <p><strong className="text-foreground">Loggning (Art. 12):</strong> Alla beslut spåras i audit-loggen</p>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <div className="w-7 h-7 rounded-lg bg-medical-amber/10 flex items-center justify-center">
+                      <FileCheck className="w-4 h-4 text-medical-amber" />
+                    </div>
+                    <h4 className="text-sm font-semibold text-foreground">Klinisk verifiering</h4>
+                  </div>
+                  <div className="bg-medical-amber/5 border border-medical-amber/20 rounded-xl p-4">
+                    <div className="flex items-start gap-2 mb-3">
+                      <AlertTriangle className="w-4 h-4 text-medical-amber shrink-0 mt-0.5" />
+                      <p className="text-xs text-muted-foreground">
+                        Denna rapport är AI-genererad och kräver verifiering och signatur av ansvarig läkare innan kliniskt bruk.
+                      </p>
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-medical-amber/10 space-y-3">
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-1">Signatur</p>
+                        <div className="h-8 border-b border-dashed border-muted-foreground/30" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-1">Datum</p>
+                        <div className="h-8 border-b border-dashed border-muted-foreground/30" />
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </section>
 
+            {/* Footer */}
             <div className="border-t border-border pt-4 flex justify-between text-[10px] text-muted-foreground">
-              <div>
-                <p>Genererad av GammaAI v2.1 — AI-assisterad behandlingsplanering</p>
+              <div className="space-y-0.5">
+                <p className="flex items-center gap-1.5">
+                  <Shield className="w-3 h-3" />
+                  Genererad av GammaAI v2.1 — AI-assisterad behandlingsplanering
+                </p>
                 <p>Kliniker-in-the-loop: Alla AI-förslag kräver manuell verifiering.</p>
               </div>
               <div className="flex items-center gap-1">

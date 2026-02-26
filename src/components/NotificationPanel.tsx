@@ -22,27 +22,27 @@ const defaultNotifications: Notification[] = [
   {
     id: "n1", type: "optimization", title: "Optimera strålbana — P-2024-001",
     description: "AI föreslår 1.2mm lateralt skift för 15% lägre cochlea-dos.",
-    timestamp: "5 min sedan", read: false, archived: false, link: "/planning",
+    timestamp: "5 min sedan", read: false, archived: false, link: "/dashboard/planning",
   },
   {
     id: "n2", type: "warning", title: "OAR-gräns nära — N. facialis",
     description: "P-2024-001: N. facialis dos 8.1 Gy (gräns 8.0 Gy).",
-    timestamp: "12 min sedan", read: false, archived: false, link: "/planning",
+    timestamp: "12 min sedan", read: false, archived: false, link: "/dashboard/planning",
   },
   {
     id: "n3", type: "success", title: "Rapport genererad",
     description: "Behandlingsrapport för Anna Lindström klar.",
-    timestamp: "1 timme sedan", read: false, archived: false, link: "/reports",
+    timestamp: "1 timme sedan", read: false, archived: false, link: "/dashboard/reports",
   },
   {
     id: "n4", type: "info", title: "AI-modell uppdaterad",
     description: "Gemini 3 Flash Preview — ny version deployad.",
-    timestamp: "2 timmar sedan", read: true, archived: false, link: "/settings",
+    timestamp: "2 timmar sedan", read: true, archived: false, link: "/dashboard/settings",
   },
   {
     id: "n5", type: "success", title: "Segmentering godkänd",
     description: "GTV/CTV för Erik Johansson verifierad av Dr. Svensson.",
-    timestamp: "3 timmar sedan", read: true, archived: false, link: "/image-analysis",
+    timestamp: "3 timmar sedan", read: true, archived: false, link: "/dashboard/image-analysis",
   },
 ];
 

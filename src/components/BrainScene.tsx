@@ -13,17 +13,16 @@ interface BrainSceneProps {
 }
 
 function BrainMesh() {
-  const ref = useRef<THREE.Mesh>(null);
   return (
-    <Sphere ref={ref} args={[1.8, 64, 64]} position={[0, 0, 0]}>
+    <Sphere args={[1.8, 48, 48]} position={[0, 0, 0]}>
       <MeshDistortMaterial
         color="hsl(215, 25%, 55%)"
         transparent
         opacity={0.12}
         roughness={0.8}
         metalness={0.1}
-        distort={0.15}
-        speed={0.8}
+        distort={0.1}
+        speed={0.5}
         wireframe={false}
       />
     </Sphere>
@@ -32,7 +31,7 @@ function BrainMesh() {
 
 function BrainWireframe() {
   return (
-    <Sphere args={[1.82, 32, 32]} position={[0, 0, 0]}>
+    <Sphere args={[1.82, 24, 24]} position={[0, 0, 0]}>
       <meshBasicMaterial color="hsl(215, 30%, 60%)" transparent opacity={0.06} wireframe />
     </Sphere>
   );
@@ -177,8 +176,10 @@ export default function BrainScene({
     <Canvas
       camera={{ position: [0, 0, 4.5], fov: 45 }}
       style={{ background: "transparent" }}
-      dpr={[1, 2]}
-      gl={{ antialias: true, alpha: true }}
+      dpr={[1, 1.5]}
+      gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+      frameloop="always"
+      performance={{ min: 0.5 }}
     >
       <ambientLight intensity={0.6} />
       <directionalLight position={[5, 5, 5]} intensity={0.4} />
@@ -196,13 +197,14 @@ export default function BrainScene({
       
       <OrbitControls
         autoRotate={autoRotate}
-        autoRotateSpeed={1.2}
+        autoRotateSpeed={1}
         enableDamping
-        dampingFactor={0.08}
+        dampingFactor={0.12}
         enablePan={false}
         minDistance={2.5}
         maxDistance={8}
-        rotateSpeed={0.6}
+        rotateSpeed={0.8}
+        zoomSpeed={0.8}
       />
     </Canvas>
   );

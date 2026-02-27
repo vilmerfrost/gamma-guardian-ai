@@ -35,9 +35,9 @@ const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { st
 const item = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } };
 
 const scenarios = [
-  { name: "Konservativ", dose: 10, collimator: 6, note: "Lägre risk, marginellt lägre tumörkontroll" },
-  { name: "Standard (AI-rekommenderad)", dose: 12, collimator: 8, note: "Optimal balans tumörkontroll/OAR-skydd" },
-  { name: "Aggressiv", dose: 14, collimator: 10, note: "Högre tumörkontroll men ökad OAR-risk" },
+  { name: "Conservative", dose: 10, collimator: 6, note: "Lower risk, marginally lower tumor control" },
+  { name: "Standard (AI-recommended)", dose: 12, collimator: 8, note: "Optimal balance of tumor control/OAR protection" },
+  { name: "Aggressivee", dose: 14, collimator: 10, note: "Higher tumor control but increased OAR risk" },
 ];
 
 const PlanningAssistant = () => {
@@ -87,7 +87,7 @@ const PlanningAssistant = () => {
       eventType: "dose_plan_change",
       eventCategory: "planning",
       patientId: selectedPatient.id,
-      description: `Simulering körd: ${currentDose} Gy, kollimator ${currentCollimator}mm, ${fractions[0]} fraktioner`,
+      description: `Simulation run: ${currentDose} Gy, collimator ${currentCollimator}mm, ${fractions[0]} fractions`,
       metadata: { dose: currentDose, collimator: currentCollimator, fractions: fractions[0] },
     });
     setTimeout(() => setIsSimulating(false), 2500);
@@ -153,17 +153,17 @@ const PlanningAssistant = () => {
         eventType: "ai_recommendation",
         eventCategory: "ai",
         patientId: selectedPatient.id,
-        description: "AI-riskbedömning genererad",
+        description: "AI risk assessment generated",
         aiModelVersion: "gemini-3-flash-preview",
       });
       addNotification({
         type: "success",
-        title: "AI-riskbedömning klar",
-        description: `Riskanalys för ${selectedPatient.name} är genererad och redo för klinisk granskning.`,
+        title: "AI risk assessment ready",
+        description: `Risk analysis for ${selectedPatient.name} is generated and ready for clinical review.`,
         link: "/dashboard/planning",
       });
     } catch (e: any) {
-      toast.error(e.message || "Kunde inte generera riskbedömning");
+      toast.error(e.message || "Could not generate risk assessment");
     } finally {
       setIsAILoading(false);
     }
@@ -173,14 +173,14 @@ const PlanningAssistant = () => {
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6 max-w-7xl mx-auto">
       <motion.div variants={item} className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Planeringsassistent</h1>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Planningsassistent</h1>
           <p className="text-sm text-muted-foreground mt-0.5">AI-genererad dosplanering — {selectedPatient.name}</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => { setDose([12]); setCollimator([8]); setFractions([1]); setActiveScenario(1); }}>
-            <RotateCcw className="w-3.5 h-3.5 mr-1.5" />Återställ
+            <RotateCcw className="w-3.5 h-3.5 mr-1.5" />Reset
           </Button>
-          <Button size="sm" className="gradient-primary text-primary-foreground border-0"><Save className="w-3.5 h-3.5 mr-1.5" />Spara plan</Button>
+          <Button size="sm" className="gradient-primary text-primary-foreground border-0"><Save className="w-3.5 h-3.5 mr-1.5" />Save plan</Button>
         </div>
       </motion.div>
 
@@ -190,9 +190,9 @@ const PlanningAssistant = () => {
             <div className="p-4 border-b border-border flex items-center justify-between">
               <Tabs value={planTab} onValueChange={setPlanTab}>
                 <TabsList className="h-8">
-                  <TabsTrigger value="dose" className="text-xs h-6 px-3">Dosfördelning</TabsTrigger>
+                  <TabsTrigger value="dose" className="text-xs h-6 px-3">Dose distribution</TabsTrigger>
                   <TabsTrigger value="dvh" className="text-xs h-6 px-3">DVH</TabsTrigger>
-                  <TabsTrigger value="beams" className="text-xs h-6 px-3">Strålbanor</TabsTrigger>
+                  <TabsTrigger value="beams" className="text-xs h-6 px-3">Beam paths</TabsTrigger>
                 </TabsList>
               </Tabs>
               <Button variant="outline" size="sm" onClick={handleSimulate} disabled={isSimulating}>
@@ -244,7 +244,7 @@ const PlanningAssistant = () => {
 
             {planTab === "dvh" && (
               <div className="relative h-[400px] bg-foreground/[0.03] p-6">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mb-4">Dos-volym histogram (DVH) — Beräknat för {currentDose} Gy</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mb-4">Dose-volume histogram (DVH) � Calculated for {currentDose} Gy</p>
                 <div className="relative h-[300px] border-l-2 border-b-2 border-muted-foreground/20">
                   {[100, 75, 50, 25, 0].map((v) => (
                     <div key={v} className="absolute left-0 text-[9px] text-muted-foreground -translate-x-8" style={{ bottom: `${v}%` }}>{v}%</div>
@@ -280,7 +280,7 @@ const PlanningAssistant = () => {
                   {plan.beams.map((beam) => (
                     <div key={beam.id} className="bg-muted/30 rounded-lg p-3">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-semibold text-foreground">Strålbana {beam.id}</span>
+                        <span className="text-xs font-semibold text-foreground">Beam path {beam.id}</span>
                         <span className="text-[10px] text-medical-cyan font-medium">{beam.angle}°</span>
                       </div>
                       <div className="grid grid-cols-3 gap-2 text-[10px]">
@@ -299,12 +299,12 @@ const PlanningAssistant = () => {
           <motion.div variants={item} className="card-medical">
             <div className="p-4 border-b border-border flex items-center gap-2">
               <Shield className="w-4 h-4 text-medical-cyan" />
-              <h3 className="text-sm font-semibold text-foreground">OAR-dosbegränsningar</h3>
-              <span className="text-[10px] text-muted-foreground ml-auto">Beräknade i realtid</span>
+              <h3 className="text-sm font-semibold text-foreground">OAR dose constraints</h3>
+              <span className="text-[10px] text-muted-foreground ml-auto">Calculated in real time</span>
             </div>
             <div className="p-4">
               <div className="grid grid-cols-5 text-[10px] text-muted-foreground uppercase tracking-wider font-semibold pb-2 border-b border-border">
-                <span>Struktur</span><span>Typ</span><span>Gräns</span><span>Aktuell dos</span><span>Status</span>
+                <span>Structure</span><span>Type</span><span>Limit</span><span>Current dose</span><span>Status</span>
               </div>
               {oarResults.map((oar, i) => (
                 <div key={i} className="grid grid-cols-5 text-xs py-2.5 border-b border-border/50 items-center">
@@ -331,7 +331,7 @@ const PlanningAssistant = () => {
             <motion.div variants={item} className="card-medical p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Brain className="w-4 h-4 text-medical-cyan" />
-                <h3 className="text-sm font-semibold text-foreground">AI-riskbedömning</h3>
+                <h3 className="text-sm font-semibold text-foreground">AI risk assessment</h3>
                 {isAILoading && <span className="text-[10px] text-muted-foreground animate-pulse">Genererar...</span>}
               </div>
               <div className="prose prose-sm max-w-none text-xs text-foreground [&_h1]:text-sm [&_h2]:text-xs [&_h3]:text-xs [&_p]:text-xs [&_li]:text-xs">
@@ -357,18 +357,18 @@ const PlanningAssistant = () => {
               <span className="text-xs font-semibold text-medical-cyan uppercase tracking-wider">AI-rekommendation</span>
             </div>
             <p className="text-xs text-foreground leading-relaxed">
-              {currentDose} Gy margindos, {plan.beamCount} strålar.
+              {currentDose} Gy margin dose, {plan.beamCount} beams.
               CI: {conformity}. {oarResults.filter(o => o.status === "warning").length === 0
-                ? "Alla OAR-gränser uppfyllda."
-                : `${oarResults.filter(o => o.status === "warning").map(o => o.name).join(", ")} överskrider gränsvärde.`}
+                ? "All OAR limits met."
+                : `${oarResults.filter(o => o.status === "warning").map(o => o.name).join(", ")} exceed the limit.`}
             </p>
             <div className="flex items-center gap-1.5 mt-2 text-[10px] text-medical-green">
               <FileCheck className="w-3 h-3" />
-              <span className="font-medium">Plan genomförbar — kliniker-verifiering krävs</span>
+              <span className="font-medium">Plan feasible � clinician verification required</span>
             </div>
             <Button size="sm" variant="outline" className="mt-3 text-[10px] w-full" onClick={requestAIRisk} disabled={isAILoading}>
               <Brain className="w-3 h-3 mr-1" />
-              {isAILoading ? "Analyserar..." : "AI-riskbedömning"}
+              {isAILoading ? "Analyzing..." : "AI risk assessment"}
             </Button>
           </div>
 
@@ -402,12 +402,12 @@ const PlanningAssistant = () => {
 
           {/* Plan metrics — dynamic */}
           <div className="card-medical p-4">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Planmått</h3>
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Plan metrics</h3>
             <div className="space-y-3">
               {[
                 { label: "Conformity Index", value: conformity, target: "< 1.5", good: conformity < 1.5, icon: Target },
                 { label: "Selectivity", value: selectivity, target: "> 0.8", good: selectivity > 0.8, icon: Shield },
-                { label: "Frisk vävnad exp.", value: `${healthyTissue}%`, target: "< 5%", good: healthyTissue < 5, icon: Activity },
+                { label: "Healthy tissue exp.", value: `${healthyTissue}%`, target: "< 5%", good: healthyTissue < 5, icon: Activity },
               ].map((m, i) => (
                 <div key={i} className="flex items-center gap-3">
                   <div className={`w-7 h-7 rounded-md flex items-center justify-center ${m.good ? "bg-medical-green/10" : "bg-medical-amber/10"}`}>
@@ -417,7 +417,7 @@ const PlanningAssistant = () => {
                     <p className="text-xs text-muted-foreground">{m.label}</p>
                     <p className="text-sm font-semibold text-foreground">{m.value}</p>
                   </div>
-                  <span className={`text-[10px] font-medium ${m.good ? "text-medical-green" : "text-medical-amber"}`}>Mål: {m.target}</span>
+                  <span className={`text-[10px] font-medium ${m.good ? "text-medical-green" : "text-medical-amber"}`}>Target: {m.target}</span>
                 </div>
               ))}
             </div>
@@ -449,7 +449,7 @@ const PlanningAssistant = () => {
                       <span>CI: {ci}</span>
                       <span>SI: {si}</span>
                       <span className={`font-semibold ${feasibility >= 95 ? "text-medical-green" : feasibility >= 90 ? "text-medical-cyan" : "text-medical-amber"}`}>
-                        Genomförbarhet: {feasibility}%
+                        Feasibility: {feasibility}%
                       </span>
                     </div>
                   </button>
@@ -464,3 +464,9 @@ const PlanningAssistant = () => {
 };
 
 export default PlanningAssistant;
+
+
+
+
+
+

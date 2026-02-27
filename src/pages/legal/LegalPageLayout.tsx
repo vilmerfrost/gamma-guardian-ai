@@ -74,3 +74,4 @@ export default function LegalPageLayout({ title, lastUpdated, summary, sections,
     </div>
   );
 }
+

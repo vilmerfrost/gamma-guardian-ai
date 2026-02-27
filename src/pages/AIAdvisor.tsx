@@ -8,8 +8,8 @@ import { toast } from "sonner";
 
 const quickActions = [
   { label: "Sammanfatta patient P-2024-001", icon: Sparkles },
-  { label: "Optimera dosplan för akustikusneurinom", icon: Lightbulb },
-  { label: "Vilka risker finns med nuvarande plan?", icon: AlertTriangle },
+  { label: "Optimize dose plan for acoustic neuroma", icon: Lightbulb },
+  { label: "What risks exist with the current plan?", icon: AlertTriangle },
 ];
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } };
@@ -37,9 +37,9 @@ async function streamChat({
     body: JSON.stringify({ messages }),
   });
 
-  if (resp.status === 429) { onError("AI är överbelastad just nu, försök igen om en stund."); return; }
-  if (resp.status === 402) { onError("AI-krediter slut. Fyll på via Settings > Workspace > Usage."); return; }
-  if (!resp.ok || !resp.body) { onError("Kunde inte ansluta till AI."); return; }
+  if (resp.status === 429) { onError("AI is overloaded right now, please try again shortly."); return; }
+  if (resp.status === 402) { onError("AI credits exhausted. Top up via Settings > Workspace > Usage."); return; }
+  if (!resp.ok || !resp.body) { onError("Could not connect to AI."); return; }
 
   const reader = resp.body.getReader();
   const decoder = new TextDecoder();
@@ -124,7 +124,7 @@ const AIAdvisor = () => {
         },
       });
     } catch {
-      toast.error("Något gick fel med AI-anslutningen.");
+      toast.error("Something went wrong with the AI connection.");
       setIsLoading(false);
     }
   };
@@ -135,11 +135,11 @@ const AIAdvisor = () => {
         <div className="flex items-end justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground tracking-tight">AI Advisor</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Fråga om patientdata, dosoptimering och behandlingsplaner</p>
+            <p className="text-sm text-muted-foreground mt-0.5">Ask about patient data, dose optimization, and treatment plans</p>
           </div>
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-medical-amber/10 border border-medical-amber/20">
             <Scale className="w-3.5 h-3.5 text-medical-amber" />
-            <span className="text-[10px] font-semibold text-medical-amber">Högrisk-AI (EU AI Act)</span>
+            <span className="text-[10px] font-semibold text-medical-amber">High-risk AI (EU AI Act)</span>
           </div>
         </div>
       </motion.div>
@@ -149,10 +149,10 @@ const AIAdvisor = () => {
         <div className="flex items-start gap-2">
           <ShieldCheck className="w-4 h-4 text-medical-cyan shrink-0 mt-0.5" />
           <div className="text-[10px] text-muted-foreground space-y-0.5">
-            <p className="font-semibold text-foreground text-xs">EU AI Act — Artikel 13, 14 (Transparens & Mänsklig tillsyn)</p>
-            <p>Detta AI-system är klassificerat som <strong className="text-foreground">högrisk-AI</strong> enligt EU:s AI-förordning (2024/1689), Annex I, punkt 5(b). 
-            AI:n förklarar sitt resonemang steg för steg, anger konfidensnivå och begränsningar. Alla svar loggas för spårbarhet (Art. 12). 
-            <strong className="text-foreground"> Ansvarig kliniker måste verifiera varje rekommendation innan kliniskt beslut.</strong></p>
+            <p className="font-semibold text-foreground text-xs">EU AI Act � Articles 13, 14 (Transparency & Human Oversight)</p>
+            <p>This AI system is classified as <strong className="text-foreground">high-risk AI</strong> under the EU AI Act (2024/1689), Annex I, point 5(b). 
+            The AI explains its reasoning step by step, provides confidence levels and limitations. All responses are logged for traceability (Art. 12). 
+            <strong className="text-foreground"> The responsible clinician must verify each recommendation before clinical decisions.</strong></p>
           </div>
         </div>
       </motion.div>
@@ -226,7 +226,7 @@ const AIAdvisor = () => {
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ställ en fråga om patient, dos eller behandlingsplan..."
+              placeholder="Ask a question about patient, dose, or treatment plan..."
               className="flex-1 bg-muted/30 rounded-xl px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-primary/20 transition-shadow"
               disabled={isLoading}
             />
@@ -246,3 +246,8 @@ const AIAdvisor = () => {
 };
 
 export default AIAdvisor;
+
+
+
+
+

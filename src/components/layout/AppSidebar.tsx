@@ -25,14 +25,14 @@ import {
 
 const mainNav = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Bildanalys", url: "/dashboard/image-analysis", icon: ScanLine },
-  { title: "Planering", url: "/dashboard/planning", icon: Target },
+  { title: "Image Analysis", url: "/dashboard/image-analysis", icon: ScanLine },
+  { title: "Planning", url: "/dashboard/planning", icon: Target },
   { title: "AI Advisor", url: "/dashboard/ai-advisor", icon: MessageSquare },
-  { title: "Rapporter", url: "/dashboard/reports", icon: FileText },
+  { title: "Reports", url: "/dashboard/reports", icon: FileText },
 ];
 
 const settingsNav = [
-  { title: "Inställningar", url: "/dashboard/settings", icon: Settings },
+  { title: "Settings", url: "/dashboard/settings", icon: Settings },
 ];
 
 export function AppSidebar() {
@@ -59,7 +59,7 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] tracking-widest uppercase font-semibold px-4">
-            Verktyg
+            Tools
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -114,9 +114,11 @@ export function AppSidebar() {
             <span className="text-[10px] font-semibold text-sidebar-primary uppercase tracking-wider">System Status</span>
           </div>
           <p className="text-[11px] text-sidebar-foreground/60">AI Engine: Online</p>
-          <p className="text-[11px] text-sidebar-foreground/60">Senaste synk: 2 min sedan</p>
+          <p className="text-[11px] text-sidebar-foreground/60">Last sync: 2 min ago</p>
         </div>
       </SidebarFooter>
     </Sidebar>
   );
 }
+
+

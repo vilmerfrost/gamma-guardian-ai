@@ -24,9 +24,9 @@ const defaultNotifications: AppNotification[] = [
   {
     id: "n1",
     type: "optimization",
-    title: "Optimera strålbana — P-2024-001",
-    description: "AI föreslår 1.2mm lateralt skift för 15% lägre cochlea-dos.",
-    timestamp: "5 min sedan",
+    title: "Optimize beam path � P-2024-001",
+    description: "AI suggests a 1.2mm lateral shift for 15% lower cochlea dose.",
+    timestamp: "5 min ago",
     read: false,
     archived: false,
     link: "/dashboard/planning",
@@ -34,9 +34,9 @@ const defaultNotifications: AppNotification[] = [
   {
     id: "n2",
     type: "warning",
-    title: "OAR-gräns nära — N. facialis",
-    description: "P-2024-001: N. facialis dos 8.1 Gy (gräns 8.0 Gy).",
-    timestamp: "12 min sedan",
+    title: "OAR limit near � N. facialis",
+    description: "P-2024-001: N. facialis dose 8.1 Gy (limit 8.0 Gy).",
+    timestamp: "12 min ago",
     read: false,
     archived: false,
     link: "/dashboard/planning",
@@ -44,9 +44,9 @@ const defaultNotifications: AppNotification[] = [
   {
     id: "n3",
     type: "success",
-    title: "Rapport genererad",
-    description: "Behandlingsrapport för Anna Lindström klar.",
-    timestamp: "1 timme sedan",
+    title: "Report generated",
+    description: "Treatment report for Anna Lindstrom ready.",
+    timestamp: "1 hour ago",
     read: false,
     archived: false,
     link: "/dashboard/reports",
@@ -67,7 +67,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     setNotifications((prev) => [
       {
         id: `n-${Date.now()}`,
-        timestamp: notification.timestamp ?? "Nu",
+        timestamp: notification.timestamp ?? "Now",
         read: false,
         archived: false,
         ...notification,
@@ -108,3 +108,9 @@ export function useNotifications() {
 export function useNotificationCount() {
   return useNotifications().unreadCount;
 }
+
+
+
+
+
+

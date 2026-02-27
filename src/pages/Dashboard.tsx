@@ -30,12 +30,12 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const stats = [
-  { label: "Aktiva patienter", value: "5", icon: Users, change: "+2 denna vecka", trend: "up" },
-  { label: "Segmenteringsnoggrannhet", value: "96.8%", icon: Crosshair, change: "Mål: ≥95%", trend: "up" },
-  { label: "Behandlingar idag", value: "3", icon: Target, change: "2 kvar", trend: "neutral" },
-  { label: "Genomsnittlig AI-score", value: "93.2", icon: TrendingUp, change: "+1.4% denna månad", trend: "up" },
-  { label: "Planverifiering", value: "100%", icon: Shield, change: "Alla godkända", trend: "up" },
-  { label: "Rapporter genererade", value: "47", icon: FileCheck, change: "12 denna vecka", trend: "up" },
+  { label: "Active patients", value: "5", icon: Users, change: "+2 this week", trend: "up" },
+  { label: "Segmentation accuracy", value: "96.8%", icon: Crosshair, change: "Target: >=95%", trend: "up" },
+  { label: "Treatments today", value: "3", icon: Target, change: "2 remaining", trend: "neutral" },
+  { label: "Average AI score", value: "93.2", icon: TrendingUp, change: "+1.4% this month", trend: "up" },
+  { label: "Plan verification", value: "100%", icon: Shield, change: "All approved", trend: "up" },
+  { label: "Reports generated", value: "47", icon: FileCheck, change: "12 this week", trend: "up" },
 ];
 
 const insightIcons = {
@@ -53,10 +53,10 @@ const insightStyles = {
 };
 
 const treatmentTimeline = [
-  { time: "08:00", patient: "Anna Lindström", type: "Gamma Knife SRS", status: "completed" as const },
-  { time: "10:30", patient: "Erik Johansson", type: "Dosplanering", status: "in-progress" as const },
-  { time: "13:00", patient: "Sofia Nilsson", type: "MRI-analys", status: "scheduled" as const },
-  { time: "14:30", patient: "Lars Bergman", type: "Uppföljning", status: "scheduled" as const },
+  { time: "08:00", patient: "Anna Lindstrom", type: "Gamma Knife SRS", status: "completed" as const },
+  { time: "10:30", patient: "Erik Johansson", type: "Dose planning", status: "in-progress" as const },
+  { time: "13:00", patient: "Sofia Nilsson", type: "MRI analysis", status: "scheduled" as const },
+  { time: "14:30", patient: "Lars Bergman", type: "Follow-up", status: "scheduled" as const },
 ];
 
 const container = {
@@ -79,13 +79,13 @@ const Dashboard = () => {
         <div>
           <h1 className="text-2xl font-bold text-foreground tracking-tight">Dashboard</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Gamma Knife-behandlingscentrum — Klinisk översikt
+            Gamma Knife Treatment Center � Clinical Overview
           </p>
         </div>
         <div className="flex items-center gap-3">
           <div className="hidden md:flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full bg-medical-green/10 text-medical-green border border-medical-green/20 font-medium">
             <HeartPulse className="w-3 h-3" />
-            CE-märkt system
+            CE-marked system
           </div>
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Activity className="w-3.5 h-3.5 text-medical-green" />
@@ -191,7 +191,7 @@ const Dashboard = () => {
                       t.status === "in-progress" ? "bg-medical-cyan/10 text-medical-cyan border-medical-cyan/20" :
                       "bg-muted text-muted-foreground border-border"
                     }`}>
-                      {t.status === "completed" ? "Klar" : t.status === "in-progress" ? "Pågår" : "Planerad"}
+                      {t.status === "completed" ? "Done" : t.status === "in-progress" ? "In progress" : "Scheduled"}
                     </span>
                   </div>
                 ))}
@@ -205,13 +205,13 @@ const Dashboard = () => {
                     { label: "GTV-segmentering", value: 96.8, target: 95, unit: "%" },
                     { label: "CTV-precision", value: 94.2, target: 95, unit: "%" },
                     { label: "OAR-identifiering", value: 98.1, target: 95, unit: "%" },
-                    { label: "Dosplanförslag", value: 92.5, target: 90, unit: "% godkända" },
+                    { label: "Dose plan suggestions", value: 92.5, target: 90, unit: "% approved" },
                   ].map((m, i) => (
                     <div key={i} className="bg-muted/30 rounded-lg p-3">
                       <div className="flex items-center justify-between mb-2">
                         <p className="text-xs text-muted-foreground">{m.label}</p>
                         <span className={`text-[10px] font-semibold ${m.value >= m.target ? "text-medical-green" : "text-medical-amber"}`}>
-                          {m.value >= m.target ? "✓ Mål uppnått" : "⚠ Under mål"}
+                          {m.value >= m.target ? "? Target reached" : "? Below target"}
                         </span>
                       </div>
                       <p className="text-lg font-bold text-foreground">{m.value}{m.unit}</p>
@@ -224,15 +224,15 @@ const Dashboard = () => {
                             transition={{ duration: 1, delay: i * 0.15 }}
                           />
                         </div>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">Mål: ≥{m.target}%</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">Target: ≥{m.target}%</p>
                       </div>
                     </div>
                   ))}
                 </div>
                 <div className="bg-medical-cyan/5 border border-medical-cyan/20 rounded-lg p-3">
                   <p className="text-xs text-foreground leading-relaxed">
-                    <strong>Explainable AI:</strong> Alla segmenteringsbeslut loggas med konfidensvärden per voxel.
-                    Kliniker kan granska AI:ns beslutsgränser i bildanalys-vyn innan de godkänner planer.
+                    <strong>Explainable AI:</strong> All segmentation decisions are logged with per-voxel confidence values.
+                    Clinicians can review AI decision boundaries in image analysis before approving plans.
                   </p>
                 </div>
               </div>
@@ -276,14 +276,14 @@ const Dashboard = () => {
           <div className="card-medical p-4">
             <div className="flex items-center gap-2 mb-3">
               <Shield className="w-4 h-4 text-medical-green" />
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Klinisk kontroll</h3>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Clinical control</h3>
             </div>
             <div className="space-y-2.5 text-xs">
               {[
-                { label: "AI-segmenteringar väntande granskning", value: "2", color: "text-medical-amber" },
-                { label: "Dosplaner godkända idag", value: "3", color: "text-medical-green" },
-                { label: "Rapporter signerade", value: "5", color: "text-medical-green" },
-                { label: "Avvikelser flaggade", value: "1", color: "text-medical-red" },
+                { label: "AI segmentations pending review", value: "2", color: "text-medical-amber" },
+                { label: "Dose plans approved today", value: "3", color: "text-medical-green" },
+                { label: "Reports signed", value: "5", color: "text-medical-green" },
+                { label: "Deviations flagged", value: "1", color: "text-medical-red" },
               ].map((s, i) => (
                 <div key={i} className="flex items-center justify-between">
                   <span className="text-muted-foreground">{s.label}</span>
@@ -293,7 +293,7 @@ const Dashboard = () => {
             </div>
             <div className="mt-3 pt-3 border-t border-border">
               <p className="text-[10px] text-muted-foreground italic">
-                AI stödjer — klinikern beslutar. Alla AI-förslag kräver manuell verifiering.
+                AI assists � clinicians decide. All AI suggestions require manual verification.
               </p>
             </div>
           </div>
@@ -303,7 +303,7 @@ const Dashboard = () => {
       {/* MRI visualization */}
       <motion.div variants={item} className="card-medical overflow-hidden">
         <div className="p-4 border-b border-border flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-foreground">MRI-visualisering — Anna Lindström</h2>
+          <h2 className="text-sm font-semibold text-foreground">MRI visualization � Anna Lindstrom</h2>
           <div className="flex items-center gap-2 text-[10px]">
             <span className="px-2 py-0.5 rounded-full bg-medical-cyan/10 text-medical-cyan border border-medical-cyan/20 font-medium">GTV</span>
             <span className="px-2 py-0.5 rounded-full bg-medical-purple/10 text-medical-purple border border-medical-purple/20 font-medium">CTV</span>
@@ -350,7 +350,7 @@ const Dashboard = () => {
           <div className="absolute bottom-4 left-4 flex gap-4 text-[10px]">
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-medical-red/60 border border-medical-red" />
-              <span className="text-muted-foreground">GTV (Tumör)</span>
+              <span className="text-muted-foreground">GTV (Tumor)</span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full border-2 border-dashed border-medical-purple/50" />
@@ -362,11 +362,11 @@ const Dashboard = () => {
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-medical-green/30 border border-medical-green/50" />
-              <span className="text-muted-foreground">Säker zon</span>
+              <span className="text-muted-foreground">Safe zone</span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-8 h-px bg-medical-cyan/40" />
-              <span className="text-muted-foreground">Strålbanor</span>
+              <span className="text-muted-foreground">Beam paths</span>
             </div>
           </div>
           <div className="scan-line absolute inset-0 pointer-events-none" />
@@ -377,3 +377,10 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
+
+
+
+
+
+

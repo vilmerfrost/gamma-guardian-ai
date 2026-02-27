@@ -33,7 +33,7 @@ const Auth = () => {
         setConfirmationSent(true);
       }
     } catch (err: any) {
-      toast.error(err.message || "Något gick fel");
+      toast.error(err.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -46,10 +46,10 @@ const Auth = () => {
           <div className="w-12 h-12 rounded-full bg-medical-green/10 flex items-center justify-center mx-auto mb-4">
             <CheckCircle2 className="w-6 h-6 text-medical-green" />
           </div>
-          <h2 className="text-lg font-bold text-foreground">Bekräfta din e-post</h2>
+          <h2 className="text-lg font-bold text-foreground">Verify your email</h2>
           <p className="text-sm text-muted-foreground mt-2">
-            Vi har skickat ett bekräftelsemail till <strong className="text-foreground">{email}</strong>.
-            Klicka på länken i mailet för att aktivera ditt konto.
+            We sent a verification email to <strong className="text-foreground">{email}</strong>.
+            Click the link in the email to activate your account.
           </p>
           <Button variant="outline" className="mt-6" onClick={() => { setConfirmationSent(false); setIsLogin(true); }}>
             Tillbaka till inloggning
@@ -103,7 +103,7 @@ const Auth = () => {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-xs font-medium">Lösenord</Label>
+              <Label htmlFor="password" className="text-xs font-medium">Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
@@ -119,7 +119,7 @@ const Auth = () => {
               </div>
             </div>
             <Button type="submit" className="w-full gradient-primary text-primary-foreground border-0" disabled={loading}>
-              {loading ? "Laddar..." : isLogin ? "Logga in" : "Skapa konto"}
+              {loading ? "Loading..." : isLogin ? "Logga in" : "Skapa konto"}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </form>
@@ -127,7 +127,7 @@ const Auth = () => {
           <div className="mt-4 flex items-start gap-2 bg-muted/30 rounded-lg p-3">
             <AlertCircle className="w-3.5 h-3.5 text-medical-amber shrink-0 mt-0.5" />
             <p className="text-[10px] text-muted-foreground">
-              GammaAI hanterar patientdata. Använd dina sjukhusuppgifter. Sessionen sparas automatiskt.
+              GammaAI handles patient data. Use your hospital credentials. Your session is saved automatically.
             </p>
           </div>
         </div>
@@ -137,3 +137,6 @@ const Auth = () => {
 };
 
 export default Auth;
+
+
+

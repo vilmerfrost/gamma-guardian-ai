@@ -71,12 +71,12 @@ const ImageAnalysis = () => {
   const [selectedPatient] = useState(patients[0]);
   const [activeView, setActiveView] = useState<"axial" | "sagittal" | "coronal">("axial");
   const [layers, setLayers] = useState([
-    { id: "gtv", label: "GTV (Tumör)", color: "bg-medical-red", enabled: true },
-    { id: "ctv", label: "CTV (Klinisk målvolym)", color: "bg-medical-purple", enabled: true },
+    { id: "gtv", label: "GTV (Tumor)", color: "bg-medical-red", enabled: true },
+    { id: "ctv", label: "CTV (Clinical target volume)", color: "bg-medical-purple", enabled: true },
     { id: "cochlea", label: "OAR: Cochlea", color: "bg-medical-amber", enabled: true },
-    { id: "brainstem", label: "OAR: Hjärnstam", color: "bg-medical-amber", enabled: true },
+    { id: "brainstem", label: "OAR: Brainstem", color: "bg-medical-amber", enabled: true },
     { id: "facial", label: "OAR: N. facialis", color: "bg-medical-amber", enabled: true },
-    { id: "optic", label: "OAR: Optisk chiasm", color: "bg-medical-amber", enabled: false },
+    { id: "optic", label: "OAR: Optic chiasm", color: "bg-medical-amber", enabled: false },
   ]);
   const [show3D, setShow3D] = useState(false);
   const [compareMode, setCompareMode] = useState(false);
@@ -123,16 +123,16 @@ const ImageAnalysis = () => {
         setTimeout(() => {
           addNotification({
             type: "success",
-            title: "Segmentering slutförd",
-            description: `${parsed.fileName} har preprocessats och är redo för 3D-analys.`,
+            title: "Segmentation completed",
+            description: `${parsed.fileName} has been preprocessed and is ready for 3D analysis.`,
             link: "/dashboard/image-analysis",
           });
         }, 650);
       } else {
-        toast.warning("Filen laddades upp, men volymdata kunde inte parsas i browsern.");
+        toast.warning("File uploaded, but volume data could not be parsed in the browser.");
       }
     } catch (e: any) {
-      toast.error(e?.message || "Kunde inte läsa filen");
+      toast.error(e?.message || "Could not read file");
     } finally {
       setIsParsingFile(false);
     }
@@ -244,12 +244,12 @@ const ImageAnalysis = () => {
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6 max-w-7xl mx-auto">
       <motion.div variants={item} className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Patientbildanalys</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">AI-segmentering av GTV/CTV och kritiska strukturer (OAR)</p>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Patient image analysis</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">AI segmentation of GTV/CTV and critical structures (OAR)</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setCompareMode(!compareMode)} className={compareMode ? "border-medical-purple text-medical-purple" : ""}>
-            <GitCompare className="w-3.5 h-3.5 mr-1.5" />Jämför
+            <GitCompare className="w-3.5 h-3.5 mr-1.5" />Compare
           </Button>
           <Button variant="outline" size="sm" onClick={() => setShow3D(!show3D)} className={show3D ? "border-medical-cyan text-medical-cyan" : ""}>
             <Box className="w-3.5 h-3.5 mr-1.5" />3D-vy
@@ -273,14 +273,14 @@ const ImageAnalysis = () => {
             <div className="flex items-center gap-2">
               {!show3D && (
                 <span className="text-[10px] text-medical-cyan flex items-center gap-1">
-                  <GripVertical className="w-3 h-3" /> Dra kontrollpunkter för att redigera
+                  <GripVertical className="w-3 h-3" /> Drag control points to edit
                 </span>
               )}
               <Tabs value={activeView} onValueChange={(v) => setActiveView(v as any)}>
                 <TabsList className="h-8">
                   <TabsTrigger value="axial" className="text-xs h-6 px-3">Axial</TabsTrigger>
                   <TabsTrigger value="sagittal" className="text-xs h-6 px-3">Sagittal</TabsTrigger>
-                  <TabsTrigger value="coronal" className="text-xs h-6 px-3">Koronal</TabsTrigger>
+                  <TabsTrigger value="coronal" className="text-xs h-6 px-3">Coronal</TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
@@ -295,7 +295,7 @@ const ImageAnalysis = () => {
                     <div className="w-full h-full flex items-center justify-center">
                       <div className="flex flex-col items-center gap-2">
                         <div className="w-6 h-6 border-2 border-medical-cyan border-t-transparent rounded-full animate-spin" />
-                        <span className="text-xs text-muted-foreground">Laddar 3D...</span>
+                        <span className="text-xs text-muted-foreground">Loading 3D...</span>
                       </div>
                     </div>
                   }>
@@ -318,18 +318,18 @@ const ImageAnalysis = () => {
                     <div className="text-[10px] font-semibold text-medical-cyan bg-medical-cyan/10 px-2 py-0.5 rounded border border-medical-cyan/20">3D-rekonstruktion (WebGL)</div>
                     <div className="text-[10px] text-muted-foreground">{selectedPatient.name} — {selectedPatient.diagnosis}</div>
                     <div className="text-[10px] text-muted-foreground">
-                      {uploadedScan ? `Laddad fil: ${uploadedScan.fileName}` : "Sample model: Brain Atlas v1"}
+                      {uploadedScan ? `Loaded file: ${uploadedScan.fileName}` : "Sample model: Brain Atlas v1"}
                     </div>
                     <div className="flex items-center gap-1.5 mt-2">
                       <Button variant="outline" size="sm" className={`h-7 text-[10px] gap-1 ${isAutoRotating ? "border-medical-cyan text-medical-cyan" : ""}`}
                         onClick={() => setIsAutoRotating(!isAutoRotating)}>
                         {isAutoRotating ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-                        {isAutoRotating ? "Pausa" : "Rotera"}
+                        {isAutoRotating ? "Pause" : "Rotate"}
                       </Button>
                     </div>
                     <div className="space-y-1.5 mt-1.5">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] text-muted-foreground/70">Snittplan</span>
+                        <span className="text-[10px] text-muted-foreground/70">Slice plane</span>
                         <div className="inline-flex rounded-full bg-background/70 border border-border/60 overflow-hidden">
                           {["none", "x", "y", "z"].map((axis) => (
                             <button
@@ -349,7 +349,7 @@ const ImageAnalysis = () => {
                       </div>
                       {clipAxis !== "none" && (
                         <div className="flex items-center gap-2">
-                          <span className="text-[9px] text-muted-foreground/60">Djup</span>
+                          <span className="text-[9px] text-muted-foreground/60">Depth</span>
                           <div className="flex-1">
                             <Slider
                               min={-0.8}
@@ -365,11 +365,11 @@ const ImageAnalysis = () => {
                   </div>
                   <div className="absolute top-4 right-4 text-[10px] text-muted-foreground/60 font-mono text-right space-y-0.5 z-10">
                     <p>Volym: {gtvVolume} cm³</p>
-                    <p>9 strålbanor</p>
+                    <p>9 beam paths</p>
                     <p>{isAutoRotating ? "Auto-rotation" : "Manuell"}</p>
                   </div>
                   <div className="absolute bottom-3 left-3 flex items-center gap-1.5 text-[10px] text-muted-foreground/50 pointer-events-none z-10">
-                    <Hand className="w-3.5 h-3.5" /> Dra för att rotera — Scrolla för att zooma
+                    <Hand className="w-3.5 h-3.5" /> Drag to rotate � Scroll to zoom
                   </div>
                 </div>
               ) : (
@@ -378,7 +378,7 @@ const ImageAnalysis = () => {
                   {livePreviewUrl && (
                     <img
                       src={livePreviewUrl}
-                      alt={uploadedScan ? `Forhandsvisning: ${uploadedScan.fileName}` : "Forhandsvisning"}
+                      alt={uploadedScan ? `Preview: ${uploadedScan.fileName}` : "Preview"}
                       className="absolute inset-0 h-full w-full object-contain opacity-60 pointer-events-none"
                     />
                   )}
@@ -460,9 +460,9 @@ const ImageAnalysis = () => {
                   </div>
                   <div className="absolute top-3 left-3 text-[10px] text-muted-foreground/60 font-mono space-y-0.5">
                     <p>SE: 4 / IM: 128</p><p>TR: 450ms TE: 15ms</p><p>Slice: 2.0mm</p><p>{activeView.toUpperCase()}</p>
-                    {uploadedScan && <p className="text-medical-cyan">Aktiv fil: {uploadedScan.fileName}</p>}
-                    {uploadedScan && !livePreviewUrl && <p>DICOM/NIfTI laddad (pixelpreview ej tillganglig i browser)</p>}
-                    {lastUploadTime && <p>Senaste uppladdning: {lastUploadTime}</p>}
+                    {uploadedScan && <p className="text-medical-cyan">Active file: {uploadedScan.fileName}</p>}
+                    {uploadedScan && !livePreviewUrl && <p>DICOM/NIfTI loaded (pixel preview not available in browser)</p>}
+                    {lastUploadTime && <p>Latest upload: {lastUploadTime}</p>}
                   </div>
                   <div className="absolute top-3 right-3 text-[10px] text-muted-foreground/60 font-mono text-right space-y-0.5">
                     <p>{selectedPatient.name}</p><p>{selectedPatient.id}</p><p>MRI T1 + Gd</p>
@@ -472,7 +472,7 @@ const ImageAnalysis = () => {
               <div className="scan-line absolute inset-0 pointer-events-none" />
               <div className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-card/80 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-border text-[10px]">
                 <Crosshair className="w-3 h-3 text-medical-green" />
-                <span className="text-muted-foreground">Segmenteringsnoggrannhet:</span>
+                <span className="text-muted-foreground">Segmentation accuracy:</span>
                 <span className="font-bold text-medical-green">96.8%</span>
               </div>
             </div>
@@ -492,16 +492,16 @@ const ImageAnalysis = () => {
               className="hidden"
             />
             <Upload className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
-            <p className="text-sm font-medium text-muted-foreground">Dra och släpp MRI/CT-bilder här</p>
-            <p className="text-xs text-muted-foreground/60 mt-1">DICOM (.dcm/.dicom) och NIfTI (.nii/.nii.gz) stöds</p>
+            <p className="text-sm font-medium text-muted-foreground">Drag and drop MRI/CT images here</p>
+            <p className="text-xs text-muted-foreground/60 mt-1">DICOM (.dcm/.dicom) and NIfTI (.nii/.nii.gz) are supported</p>
             <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-medical-cyan/10 px-3 py-1 border border-medical-cyan/40">
               <CheckCircle2 className="w-3.5 h-3.5 text-medical-cyan" />
               <span className="text-[10px] font-medium text-medical-cyan">
-                DICOM / NIfTI-pipeline redo — släpp för att parsas
+                DICOM / NIfTI pipeline ready � drop to parse
               </span>
             </div>
             <Button variant="outline" size="sm" className="mt-3" onClick={() => fileInputRef.current?.click()} disabled={isParsingFile}>
-              {isParsingFile ? "Analyserar fil..." : "Välj fil"}
+              {isParsingFile ? "Analyzing file..." : "Choose file"}
             </Button>
             {uploadedScan && (
               <p className="text-[11px] text-medical-cyan mt-2">
@@ -518,12 +518,12 @@ const ImageAnalysis = () => {
             <div className="space-y-2.5">
               <div>
                 <p className="text-sm font-semibold text-foreground">{selectedPatient.name}</p>
-                <p className="text-xs text-muted-foreground">{selectedPatient.age} år, {selectedPatient.gender}</p>
+                <p className="text-xs text-muted-foreground">{selectedPatient.age} years, {selectedPatient.gender}</p>
               </div>
               <div className="text-xs space-y-1.5">
-                <div className="flex justify-between"><span className="text-muted-foreground">Diagnos</span><span className="font-medium text-foreground">{selectedPatient.diagnosis}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Storlek</span><span className="font-medium text-foreground">{selectedPatient.tumorSize}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Plats</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Diagnosis</span><span className="font-medium text-foreground">{selectedPatient.diagnosis}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Size</span><span className="font-medium text-foreground">{selectedPatient.tumorSize}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Location</span></div>
                 <p className="text-xs font-medium text-foreground">{selectedPatient.location}</p>
               </div>
             </div>
@@ -532,7 +532,7 @@ const ImageAnalysis = () => {
           <div className="card-medical p-4">
             <div className="flex items-center gap-2 mb-3">
               <Layers className="w-4 h-4 text-medical-cyan" />
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Segmenteringslager</h3>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Segmentation layers</h3>
             </div>
             <div className="space-y-2">
               {layers.map((layer) => {
@@ -553,7 +553,7 @@ const ImageAnalysis = () => {
             </div>
             <div className="mt-3 pt-3 border-t border-border/60 space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-muted-foreground uppercase tracking-wider">Hjärnans opacitet</span>
+                <span className="text-[11px] text-muted-foreground uppercase tracking-wider">Brain opacity</span>
                 <span className="text-[10px] text-muted-foreground font-mono">{Math.round(brainOpacity * 100)}%</span>
               </div>
               <Slider
@@ -564,7 +564,7 @@ const ImageAnalysis = () => {
                 onValueChange={handleBrainOpacityChange}
               />
               <p className="text-[10px] text-muted-foreground/70">
-                Justera opaciteten för att frilägga GTV/CTV och OAR inuti hjärnvolymen.
+                Adjust opacity to expose GTV/CTV and OAR structures inside the brain volume.
               </p>
             </div>
           </div>
@@ -594,11 +594,11 @@ const ImageAnalysis = () => {
                 </div>
               </div>
               <div className="text-xs text-muted-foreground space-y-1 pt-2 border-t border-border">
-                <p className="font-medium text-foreground text-[10px] uppercase tracking-wider mb-1">OAR-avstånd</p>
+                <p className="font-medium text-foreground text-[10px] uppercase tracking-wider mb-1">OAR distances</p>
                 <div className="flex justify-between"><span>Cochlea</span><span className="text-medical-green font-semibold">4.1mm</span></div>
-                <div className="flex justify-between"><span>Hjärnstam</span><span className="text-medical-green font-semibold">8.2mm</span></div>
+                <div className="flex justify-between"><span>Brainstem</span><span className="text-medical-green font-semibold">8.2mm</span></div>
                 <div className="flex justify-between"><span>N. facialis</span><span className="text-medical-amber font-semibold">2.8mm ⚠</span></div>
-                <div className="flex justify-between"><span>Optisk chiasm</span><span className="text-medical-green font-semibold">18.5mm</span></div>
+                <div className="flex justify-between"><span>Optic chiasm</span><span className="text-medical-green font-semibold">18.5mm</span></div>
               </div>
             </div>
           </div>
@@ -606,13 +606,13 @@ const ImageAnalysis = () => {
           <div className="card-medical p-4">
             <div className="flex items-center gap-2 mb-3">
               <Eye className="w-4 h-4 text-medical-purple" />
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tidigare skanningar</h3>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Previous scans</h3>
             </div>
             <div className="space-y-2 text-xs">
               <button className="w-full text-left p-2 rounded-lg hover:bg-muted/50 transition-colors border border-transparent hover:border-border">
                 <div className="flex items-center justify-between">
                   <p className="font-medium text-foreground">2024-12-15 — MRI T1+Gd</p>
-                  <span className="text-[10px] text-medical-green">Senaste</span>
+                  <span className="text-[10px] text-medical-green">Latest</span>
                 </div>
                 <p className="text-muted-foreground mt-0.5">Vol: {gtvVolume} cm³</p>
               </button>
@@ -632,4 +632,12 @@ const ImageAnalysis = () => {
 };
 
 export default ImageAnalysis;
+
+
+
+
+
+
+
+
 

@@ -118,7 +118,7 @@ async function parseDicomVolume(file: File): Promise<VolumeData | undefined> {
 
 export async function parseMedicalFile(file: File): Promise<ParsedMedicalFile> {
   if (!isSupportedMedicalFile(file.name)) {
-    throw new Error("Filformat stöds inte. Använd .dicom, .dcm, .nii eller .nii.gz");
+    throw new Error("Unsupported file format. Use .dicom, .dcm, .nii, or .nii.gz");
   }
 
   const format = detectFormat(file.name);

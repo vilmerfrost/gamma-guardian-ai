@@ -26,7 +26,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 <Search className="w-3.5 h-3.5 text-muted-foreground" />
                 <input
                   type="text"
-                  placeholder="Sök patient, diagnos..."
+                  placeholder="Search patient, diagnosis..."
                   className="bg-transparent text-sm outline-none w-48 placeholder:text-muted-foreground/60"
                 />
               </div>
@@ -57,7 +57,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     {user?.email?.slice(0, 2).toUpperCase() || "DR"}
                   </span>
                 </div>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={signOut} title="Logga ut">
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={signOut} title="Sign out">
                   <LogOut className="w-3.5 h-3.5 text-muted-foreground" />
                 </Button>
               </div>
@@ -78,3 +78,5 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
+
+

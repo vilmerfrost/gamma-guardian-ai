@@ -128,6 +128,7 @@ export interface VolumeMeshProps {
 
 export function VolumeMesh({ volumeData, opacity = 1, climLow = 0, climHigh = 1 }: VolumeMeshProps) {
   const [nx, ny, nz] = volumeData.dims;
+  const { texture, colormap, size, clim } = useMemo(() => {
     const tex = new THREE.Data3DTexture(volumeData.data, nx, ny, nz);
     tex.format = THREE.RedFormat;
     tex.type = THREE.FloatType;

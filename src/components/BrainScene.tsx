@@ -3,9 +3,6 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 
-import { EffectComposer, SSAO, Bloom, Vignette } from "@react-three/postprocessing";
-import { BlendFunction } from "postprocessing";
-
 type ClipAxis = "x" | "y" | "z" | "none";
 
 interface BrainSceneProps {
@@ -248,27 +245,6 @@ export default function BrainScene({
         rotateSpeed={0.65}
         zoomSpeed={0.75}
       />
-
-      <EffectComposer multisampling={0}>
-        <SSAO
-          samples={16}
-          radius={0.2}
-          intensity={20}
-          luminanceInfluence={0.6}
-          color="#000000"
-        />
-        <Bloom
-          intensity={0.25}
-          luminanceThreshold={0.7}
-          luminanceSmoothing={0.1}
-          blendFunction={BlendFunction.SCREEN}
-        />
-        <Vignette
-          offset={0.2}
-          darkness={0.75}
-          eskil={false}
-        />
-      </EffectComposer>
     </Canvas>
   );
 }

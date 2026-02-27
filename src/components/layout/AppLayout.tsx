@@ -6,7 +6,7 @@ import { NotificationPanel } from "@/components/NotificationPanel";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { useNotificationCount } from "@/hooks/useNotifications";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
@@ -64,6 +64,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </header>
           <main className="flex-1 overflow-auto p-4 md:p-6">{children}</main>
+          <footer className="border-t border-border/60 px-4 py-3 md:px-6 text-[11px] text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-3">
+              <Link to="/about" className="hover:text-foreground">About</Link>
+              <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
+              <Link to="/terms" className="hover:text-foreground">Terms</Link>
+              <Link to="/cookies" className="hover:text-foreground">Cookies</Link>
+              <Link to="/medical-disclaimer" className="hover:text-foreground">Medical Disclaimer</Link>
+            </div>
+          </footer>
         </div>
       </div>
     </SidebarProvider>

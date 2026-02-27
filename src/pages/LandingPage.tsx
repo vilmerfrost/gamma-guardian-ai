@@ -1,6 +1,6 @@
 import { Suspense, lazy, useState } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Zap, ArrowRight, Brain, Target, FileText, Shield, Clock,
   ChevronRight, Activity, Building2, CheckCircle2, Users,
@@ -353,14 +353,20 @@ const LandingPage = () => {
 
       {/* Footer */}
       <footer className="border-t border-border/50 py-8 px-6">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded gradient-accent flex items-center justify-center">
               <Zap className="w-3 h-3 text-accent-foreground" />
             </div>
             <span className="text-xs font-semibold text-muted-foreground">GammaAI — Gamma Knife Radiosurgery Suite</span>
           </div>
-          <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-3 text-[10px] text-muted-foreground">
+            <Link to="/about" className="hover:text-foreground">About</Link>
+            <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
+            <Link to="/terms" className="hover:text-foreground">Terms</Link>
+            <Link to="/cookies" className="hover:text-foreground">Cookies</Link>
+            <Link to="/medical-disclaimer" className="hover:text-foreground">Medical Disclaimer</Link>
+            <span>•</span>
             <span>EU AI Act Compliant</span>
             <span>•</span>
             <span>CE-Marked</span>
@@ -374,3 +380,5 @@ const LandingPage = () => {
 };
 
 export default LandingPage;
+
+

@@ -15,6 +15,12 @@ import Auth from "./pages/Auth";
 import LandingPage from "./pages/LandingPage";
 import { NotificationProvider } from "@/hooks/useNotifications";
 import NotFound from "./pages/NotFound";
+import AboutPage from "./pages/legal/AboutPage";
+import PrivacyPolicyPage from "./pages/legal/PrivacyPolicyPage";
+import TermsPage from "./pages/legal/TermsPage";
+import CookiePolicyPage from "./pages/legal/CookiePolicyPage";
+import MedicalDisclaimerPage from "./pages/legal/MedicalDisclaimerPage";
+import { CookieConsentBanner } from "./components/CookieConsentBanner";
 
 const queryClient = new QueryClient();
 
@@ -65,9 +71,15 @@ const App = () => (
       <AuthProvider>
         <NotificationProvider>
           <BrowserRouter>
+            <CookieConsentBanner />
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/auth" element={<AuthRoute />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/privacy" element={<PrivacyPolicyPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/cookies" element={<CookiePolicyPage />} />
+              <Route path="/medical-disclaimer" element={<MedicalDisclaimerPage />} />
               <Route path="/image-analysis" element={<Navigate to="/dashboard/image-analysis" replace />} />
               <Route path="/image-analyzis" element={<Navigate to="/dashboard/image-analysis" replace />} />
               <Route path="/dashboard/*" element={<ProtectedRoutes />} />

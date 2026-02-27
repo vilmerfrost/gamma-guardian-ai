@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 import { ellipseVolume } from "@/lib/doseCalculations";
 import { logAuditEvent } from "@/lib/auditLog";
 import { parseMedicalFile, type ParsedMedicalFile } from "@/lib/medicalFile";
@@ -19,6 +20,8 @@ const BrainScene = lazy(() => import("@/components/BrainScene"));
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } };
 const item = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } };
+
+type ClipAxisState = "none" | "x" | "y" | "z";
 
 interface ContourState {
   cx: number; cy: number; rx: number; ry: number;
@@ -38,6 +41,9 @@ const ImageAnalysis = () => {
   const [show3D, setShow3D] = useState(false);
   const [compareMode, setCompareMode] = useState(false);
   const [isAutoRotating, setIsAutoRotating] = useState(true);
+  const [brainOpacity, setBrainOpacity] = useState(0.9);
+  const [clipAxis, setClipAxis] = useState<ClipAxisState>("none");
+  const [clipPosition, setClipPosition] = useState(0);
   const [uploadedScan, setUploadedScan] = useState<ParsedMedicalFile | null>(null);
   const [isParsingFile, setIsParsingFile] = useState(false);
   const lastMouse = useRef({ x: 0, y: 0 });
@@ -146,6 +152,16 @@ const ImageAnalysis = () => {
     setDragHandle(null);
   }, [editingContour, gtv, ctv, selectedPatient.id]);
 
+  const handleBrainOpacityChange = useCallback((value: number[]) => {
+    if (value[0] === undefined) return;
+    setBrainOpacity(value[0]);
+  }, []);
+
+  const handleClipPositionChange = useCallback((value: number[]) => {
+    if (value[0] === undefined) return;
+    setClipPosition(value[0]);
+  }, []);
+
   const renderControlPoints = (contourId: string, c: ContourState, color: string) => {
     const handles = [
       { id: "center", x: c.cx, y: c.cy },
@@ -235,6 +251,9 @@ const ImageAnalysis = () => {
                       showBrainstem={isLayerEnabled("brainstem")}
                       showOptic={isLayerEnabled("optic")}
                       autoRotate={isAutoRotating}
+                      brainOpacity={brainOpacity}
+                      clipAxis={clipAxis === "none" ? undefined : clipAxis}
+                      clipPosition={clipPosition}
                     />
                   </Suspense>
                   {/* 3D controls overlay */}
@@ -250,6 +269,41 @@ const ImageAnalysis = () => {
                         {isAutoRotating ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
                         {isAutoRotating ? "Pausa" : "Rotera"}
                       </Button>
+                    </div>
+                    <div className="space-y-1.5 mt-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-muted-foreground/70">Snittplan</span>
+                        <div className="inline-flex rounded-full bg-background/70 border border-border/60 overflow-hidden">
+                          {["none", "x", "y", "z"].map((axis) => (
+                            <button
+                              key={axis}
+                              type="button"
+                              className={`px-1.5 py-0.5 text-[9px] font-medium transition-colors ${
+                                clipAxis === axis
+                                  ? "bg-medical-purple text-white"
+                                  : "text-muted-foreground/70 hover:bg-muted/50"
+                              }`}
+                              onClick={() => setClipAxis(axis as ClipAxisState)}
+                            >
+                              {axis === "none" ? "OFF" : axis.toUpperCase()}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      {clipAxis !== "none" && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] text-muted-foreground/60">Djup</span>
+                          <div className="flex-1">
+                            <Slider
+                              min={-0.8}
+                              max={0.8}
+                              step={0.02}
+                              value={[clipPosition]}
+                              onValueChange={handleClipPositionChange}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="absolute top-4 right-4 text-[10px] text-muted-foreground/60 font-mono text-right space-y-0.5 z-10">
@@ -373,6 +427,12 @@ const ImageAnalysis = () => {
             <Upload className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
             <p className="text-sm font-medium text-muted-foreground">Dra och släpp MRI/CT-bilder här</p>
             <p className="text-xs text-muted-foreground/60 mt-1">DICOM (.dcm/.dicom) och NIfTI (.nii/.nii.gz) stöds</p>
+            <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-medical-cyan/10 px-3 py-1 border border-medical-cyan/40">
+              <CheckCircle2 className="w-3.5 h-3.5 text-medical-cyan" />
+              <span className="text-[10px] font-medium text-medical-cyan">
+                DICOM / NIfTI-pipeline redo — släpp för att parsas
+              </span>
+            </div>
             <Button variant="outline" size="sm" className="mt-3" onClick={() => fileInputRef.current?.click()} disabled={isParsingFile}>
               {isParsingFile ? "Analyserar fil..." : "Välj fil"}
             </Button>
@@ -423,6 +483,22 @@ const ImageAnalysis = () => {
                   </div>
                 );
               })}
+            </div>
+            <div className="mt-3 pt-3 border-t border-border/60 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-muted-foreground uppercase tracking-wider">Hjärnans opacitet</span>
+                <span className="text-[10px] text-muted-foreground font-mono">{Math.round(brainOpacity * 100)}%</span>
+              </div>
+              <Slider
+                min={0.2}
+                max={1}
+                step={0.05}
+                value={[brainOpacity]}
+                onValueChange={handleBrainOpacityChange}
+              />
+              <p className="text-[10px] text-muted-foreground/70">
+                Justera opaciteten för att frilägga GTV/CTV och OAR inuti hjärnvolymen.
+              </p>
             </div>
           </div>
 

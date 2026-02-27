@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, Suspense, lazy } from "react";
+import { useState, useRef, useCallback, Suspense, lazy, useEffect } from "react";
 import { motion } from "framer-motion";
 import { patients } from "@/data/mockData";
 import {
@@ -24,6 +24,14 @@ interface ContourState {
   cx: number; cy: number; rx: number; ry: number;
 }
 
+const PREVIEWABLE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"];
+
+function canRenderImagePreview(file: File) {
+  if (file.type.startsWith("image/")) return true;
+  const lower = file.name.toLowerCase();
+  return PREVIEWABLE_EXTENSIONS.some((ext) => lower.endsWith(ext));
+}
+
 const ImageAnalysis = () => {
   const [selectedPatient] = useState(patients[0]);
   const [activeView, setActiveView] = useState<"axial" | "sagittal" | "coronal">("axial");
@@ -39,6 +47,8 @@ const ImageAnalysis = () => {
   const [compareMode, setCompareMode] = useState(false);
   const [isAutoRotating, setIsAutoRotating] = useState(true);
   const [uploadedScan, setUploadedScan] = useState<ParsedMedicalFile | null>(null);
+  const [livePreviewUrl, setLivePreviewUrl] = useState<string | null>(null);
+  const [lastUploadTime, setLastUploadTime] = useState<string | null>(null);
   const [isParsingFile, setIsParsingFile] = useState(false);
   const lastMouse = useRef({ x: 0, y: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -64,6 +74,8 @@ const ImageAnalysis = () => {
     try {
       const parsed = await parseMedicalFile(file);
       setUploadedScan(parsed);
+      setLastUploadTime(new Date().toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+      setLivePreviewUrl(canRenderImagePreview(file) ? URL.createObjectURL(file) : null);
       toast.success(`Fil mottagen: ${parsed.fileName}`);
 
       setTimeout(() => {
@@ -90,9 +102,14 @@ const ImageAnalysis = () => {
 
   const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
     void handleMedicalFile(file);
   }, [handleMedicalFile]);
+
+  useEffect(() => () => {
+    if (livePreviewUrl) URL.revokeObjectURL(livePreviewUrl);
+  }, [livePreviewUrl]);
 
   // --- Contour drag handlers ---
   const getSVGPoint = useCallback((e: React.PointerEvent) => {
@@ -264,6 +281,13 @@ const ImageAnalysis = () => {
               ) : (
                 /* 2D Scan with interactive contours */
                 <>
+                  {livePreviewUrl && (
+                    <img
+                      src={livePreviewUrl}
+                      alt={uploadedScan ? `Forhandsvisning: ${uploadedScan.fileName}` : "Forhandsvisning"}
+                      className="absolute inset-0 h-full w-full object-contain opacity-60 pointer-events-none"
+                    />
+                  )}
                   {compareMode && (
                     <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
                       <div className="absolute left-0 top-0 bottom-0 w-1/2 border-r-2 border-dashed border-medical-purple/40" />
@@ -342,6 +366,9 @@ const ImageAnalysis = () => {
                   </div>
                   <div className="absolute top-3 left-3 text-[10px] text-muted-foreground/60 font-mono space-y-0.5">
                     <p>SE: 4 / IM: 128</p><p>TR: 450ms TE: 15ms</p><p>Slice: 2.0mm</p><p>{activeView.toUpperCase()}</p>
+                    {uploadedScan && <p className="text-medical-cyan">Aktiv fil: {uploadedScan.fileName}</p>}
+                    {uploadedScan && !livePreviewUrl && <p>DICOM/NIfTI laddad (pixelpreview ej tillganglig i browser)</p>}
+                    {lastUploadTime && <p>Senaste uppladdning: {lastUploadTime}</p>}
                   </div>
                   <div className="absolute top-3 right-3 text-[10px] text-muted-foreground/60 font-mono text-right space-y-0.5">
                     <p>{selectedPatient.name}</p><p>{selectedPatient.id}</p><p>MRI T1 + Gd</p>

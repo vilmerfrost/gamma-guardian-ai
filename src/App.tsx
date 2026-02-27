@@ -14,6 +14,7 @@ import SettingsPage from "./pages/Settings";
 import Auth from "./pages/Auth";
 import LandingPage from "./pages/LandingPage";
 import { NotificationProvider } from "@/hooks/useNotifications";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
@@ -36,12 +37,14 @@ function ProtectedRoutes() {
   return (
     <AppLayout>
       <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/image-analysis" element={<ImageAnalysis />} />
-        <Route path="/planning" element={<PlanningAssistant />} />
-        <Route path="/ai-advisor" element={<AIAdvisor />} />
-        <Route path="/reports" element={<ReportGenerator />} />
-        <Route path="/settings" element={<SettingsPage />} />
+        <Route index element={<Dashboard />} />
+        <Route path="image-analysis" element={<ImageAnalysis />} />
+        <Route path="image-analyzis" element={<Navigate to="/dashboard/image-analysis" replace />} />
+        <Route path="planning" element={<PlanningAssistant />} />
+        <Route path="ai-advisor" element={<AIAdvisor />} />
+        <Route path="reports" element={<ReportGenerator />} />
+        <Route path="settings" element={<SettingsPage />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </AppLayout>
   );
@@ -65,7 +68,10 @@ const App = () => (
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/auth" element={<AuthRoute />} />
+              <Route path="/image-analysis" element={<Navigate to="/dashboard/image-analysis" replace />} />
+              <Route path="/image-analyzis" element={<Navigate to="/dashboard/image-analysis" replace />} />
               <Route path="/dashboard/*" element={<ProtectedRoutes />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
         </NotificationProvider>

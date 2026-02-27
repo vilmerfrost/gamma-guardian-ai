@@ -95,7 +95,12 @@ const LandingPage = () => {
       {/* Hero */}
       <section className="relative pt-32 pb-20 px-6 overflow-hidden">
         <div className="absolute inset-0 medical-grid opacity-30" />
-        <div className="absolute top-20 right-0 w-[600px] h-[600px] rounded-full bg-medical-cyan/5 blur-3xl" />
+        <img
+          src="/brain.webp"
+          alt=""
+          aria-hidden="true"
+          className="absolute top-20 right-0 w-[600px] h-[600px] object-contain opacity-20 blur-[1px] pointer-events-none select-none"
+        />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-primary/5 blur-3xl" />
 
         <motion.div variants={stagger} initial="hidden" animate="show" className="max-w-7xl mx-auto relative">

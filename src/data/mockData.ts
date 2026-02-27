@@ -57,12 +57,12 @@ export interface ChatMessage {
 export const patients: Patient[] = [
   {
     id: "P-2024-001",
-    name: "Anna Lindström",
+    name: "Anna Lindstrom",
     age: 58,
     gender: "Female",
     diagnosis: "Vestibular schwannoma",
     tumorType: "Acoustic neuroma",
-    tumorSize: "14mm × 12mm × 11mm",
+    tumorSize: "14mm  x  12mm  x  11mm",
     location: "Cerebellopontine angle, left",
     status: "in-progress",
     lastScan: "2024-12-15",
@@ -77,9 +77,9 @@ export const patients: Patient[] = [
     name: "Erik Johansson",
     age: 45,
     gender: "Male",
-    diagnosis: "Meningiom",
+    diagnosis: "Meningioma",
     tumorType: "Convexity meningioma",
-    tumorSize: "22mm × 18mm × 16mm",
+    tumorSize: "22mm  x  18mm  x  16mm",
     location: "Frontal lobe, right",
     status: "scheduled",
     lastScan: "2024-12-20",
@@ -96,7 +96,7 @@ export const patients: Patient[] = [
     gender: "Female",
     diagnosis: "Brain metastasis",
     tumorType: "Metastasis (lung)",
-    tumorSize: "8mm × 7mm × 9mm",
+    tumorSize: "8mm  x  7mm  x  9mm",
     location: "Occipital lobe, left",
     status: "completed",
     lastScan: "2024-12-10",
@@ -130,7 +130,7 @@ export const patients: Patient[] = [
     gender: "Female",
     diagnosis: "AVM",
     tumorType: "Arteriovenous malformation",
-    tumorSize: "18mm × 15mm × 14mm",
+    tumorSize: "18mm  x  15mm  x  14mm",
     location: "Parietal lobe, right",
     status: "scheduled",
     lastScan: "2024-12-22",
@@ -225,6 +225,7 @@ export const riskColors: Record<Patient["riskLevel"], string> = {
   medium: "text-medical-amber",
   high: "text-medical-red",
 };
+
 
 
 

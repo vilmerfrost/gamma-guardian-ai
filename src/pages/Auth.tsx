@@ -94,7 +94,7 @@ const Auth = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="namn@sjukhus.se"
+                  placeholder="name@hospital.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10"
@@ -109,7 +109,7 @@ const Auth = () => {
                 <Input
                   id="password"
                   type="password"
-                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10"
@@ -137,6 +137,7 @@ const Auth = () => {
 };
 
 export default Auth;
+
 
 
 

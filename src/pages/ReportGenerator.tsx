@@ -56,7 +56,7 @@ const ReportGenerator = () => {
 
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({}));
-        throw new Error(err.error || "AI-fel");
+        throw new Error(err.error || "AI error");
       }
 
       setGenerationProgress(30);
@@ -89,7 +89,7 @@ const ReportGenerator = () => {
       setReportReady(true);
       addNotification({
         type: "success",
-        title: "Rapport klar",
+        title: "Report ready",
         description: `AI report for ${patient.name} is ready for review.`,
         link: "/dashboard/reports",
       });
@@ -97,7 +97,7 @@ const ReportGenerator = () => {
         eventType: "report_generated",
         eventCategory: "report",
         patientId: patient.id,
-        description: "AI-rapport genererad",
+        description: "AI report generated",
         aiModelVersion: "gemini-3-flash-preview",
       });
     } catch (e: any) {
@@ -112,7 +112,7 @@ const ReportGenerator = () => {
       {/* Header */}
       <motion.div variants={item} className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Rapportgenerator</h1>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Report Generator</h1>
           <p className="text-sm text-muted-foreground mt-0.5">AI-generated treatment reports — PDF & EMR compatible</p>
         </div>
         <div className="flex items-center gap-3">
@@ -123,11 +123,11 @@ const ReportGenerator = () => {
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={handleGenerate} disabled={isGenerating}>
               <FileText className="w-3.5 h-3.5 mr-1.5" />
-              {isGenerating ? "Genererar..." : "Generera rapport"}
+              {isGenerating ? "Generating..." : "Generate report"}
             </Button>
             <Button variant="outline" size="sm" disabled={!reportReady}><Printer className="w-3.5 h-3.5 mr-1.5" />Print</Button>
             <Button size="sm" className="gradient-primary text-primary-foreground border-0" disabled={!reportReady}>
-              <Download className="w-3.5 h-3.5 mr-1.5" />Exportera PDF
+              <Download className="w-3.5 h-3.5 mr-1.5" />Export PDF
             </Button>
           </div>
         </div>
@@ -164,7 +164,7 @@ const ReportGenerator = () => {
         <motion.div variants={item} className="card-medical p-4">
           <div className="flex items-center gap-3 mb-3">
             <Brain className="w-4 h-4 text-medical-cyan animate-pulse-glow" />
-            <span className="text-sm font-semibold text-foreground">AI genererar rapport...</span>
+            <span className="text-sm font-semibold text-foreground">AI is generating report...</span>
           </div>
           <Progress value={generationProgress} className="h-2" />
           <div className="flex justify-between mt-2 text-[10px] text-muted-foreground">
@@ -183,15 +183,15 @@ const ReportGenerator = () => {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <BookOpen className="w-4 h-4 opacity-60" />
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] opacity-60">Behandlingsrapport</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] opacity-60">Treatment Report</p>
                   <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/10 font-medium">CE-marked</span>
                 </div>
                 <h2 className="text-xl font-bold mt-1">Gamma Knife Radiosurgery</h2>
                 <p className="text-sm opacity-70 mt-1">GammaAI â€” Automatisk rapportgenerering v2.1</p>
               </div>
               <div className="text-right text-xs opacity-70 space-y-1">
-                <p>Rapport-ID: GK-2025-{patient.id.slice(-3)}</p>
-                <p>Datum: {new Date().toLocaleDateString("sv-SE")}</p>
+                <p>Report ID: GK-2025-{patient.id.slice(-3)}</p>
+                <p>Date: {new Date().toLocaleDateString("sv-SE")}</p>
                 <p className="flex items-center gap-1 justify-end mt-1">
                   <CheckCircle2 className="w-3 h-3" /> {reportReady ? "AI-verified" : "Waiting for generation"}
                 </p>
@@ -210,10 +210,10 @@ const ReportGenerator = () => {
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                  { label: "Namn", value: patient.name, icon: User },
+                  { label: "Name", value: patient.name, icon: User },
                   { label: "Age", value: `${patient.age} years`, icon: Activity },
                   { label: "Diagnosis", value: patient.diagnosis, icon: Stethoscope },
-                  { label: "Lokalisation", value: patient.location, icon: Target },
+                  { label: "Location", value: patient.location, icon: Target },
                 ].map((f, i) => (
                   <div key={i} className="bg-muted/30 rounded-xl p-4">
                     <div className="flex items-center gap-1.5 mb-1.5">
@@ -236,7 +236,7 @@ const ReportGenerator = () => {
                   <h3 className="text-base font-semibold text-foreground">AI-generated clinical report</h3>
                   {reportReady && (
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-medical-green/10 text-medical-green border border-medical-green/20 font-medium">
-                      Komplett
+                      Complete
                     </span>
                   )}
                 </div>
@@ -336,12 +336,12 @@ const ReportGenerator = () => {
                     <div className="w-7 h-7 rounded-lg bg-medical-green/10 flex items-center justify-center">
                       <HeartPulse className="w-4 h-4 text-medical-green" />
                     </div>
-                    <h4 className="text-sm font-semibold text-foreground">Regulatorisk information</h4>
+                    <h4 className="text-sm font-semibold text-foreground">Regulatory information</h4>
                   </div>
                   <div className="text-xs text-muted-foreground space-y-2 bg-muted/20 rounded-xl p-4">
                     <p><strong className="text-foreground">Classification:</strong> High-risk AI (EU AI Act 2024/1689, Annex I, 5(b))</p>
                     <p><strong className="text-foreground">System:</strong> GammaAI v2.1.0 — CE-marked medical software</p>
-                    <p><strong className="text-foreground">AI-modell:</strong> Gemini 3 Flash Preview â€” AI Gateway</p>
+                    <p><strong className="text-foreground">AI model:</strong> Gemini 3 Flash Preview â€” AI Gateway</p>
                     <p><strong className="text-foreground">Transparency (Art. 13):</strong> AI explains reasoning step by step</p>
                     <p><strong className="text-foreground">Human oversight (Art. 14):</strong> Requires clinical verification</p>
                     <p><strong className="text-foreground">Logging (Art. 12):</strong> All decisions are tracked in the audit log</p>
@@ -363,11 +363,11 @@ const ReportGenerator = () => {
                     </div>
                     <div className="mt-3 pt-3 border-t border-medical-amber/10 space-y-3">
                       <div>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-1">Signatur</p>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-1">Signature</p>
                         <div className="h-8 border-b border-dashed border-muted-foreground/30" />
                       </div>
                       <div>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-1">Datum</p>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-1">Date</p>
                         <div className="h-8 border-b border-dashed border-muted-foreground/30" />
                       </div>
                     </div>
@@ -398,6 +398,8 @@ const ReportGenerator = () => {
 };
 
 export default ReportGenerator;
+
+
 
 
 

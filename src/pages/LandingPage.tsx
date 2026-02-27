@@ -167,10 +167,10 @@ const LandingPage = () => {
               </div>
               <div className="absolute top-4 left-4 text-[10px] font-semibold text-medical-cyan bg-medical-cyan/10 px-2.5 py-1 rounded-lg border border-medical-cyan/20 backdrop-blur-sm">
                 <Sparkles className="w-3 h-3 inline mr-1" />
-                Live 3D â€” WebGL
+                Live 3D — WebGL
               </div>
               <div className="absolute bottom-4 right-4 text-[10px] text-muted-foreground/60 font-mono bg-background/60 backdrop-blur-sm px-2 py-1 rounded">
-                Drag to rotate Â· Scroll to zoom
+                Drag to rotate · Scroll to zoom
               </div>
             </motion.div>
           </div>
@@ -189,11 +189,11 @@ const LandingPage = () => {
           </motion.h2>
           <motion.p variants={fadeUp} className="text-lg text-muted-foreground mt-6 leading-relaxed max-w-3xl mx-auto">
             Gamma Knife treatment planning currently requires manual tumor segmentation and radiation planning, which can take{" "}
-            <strong className="text-foreground">30â€“90 minutes per patient</strong> and introduces variability and human error.
+            <strong className="text-foreground">30-90 minutes per patient</strong> and introduces variability and human error.
           </motion.p>
           <motion.div variants={fadeUp} className="grid md:grid-cols-3 gap-6 mt-12">
             {[
-              { val: "30â€“90 min", label: "per patient planning time", icon: Clock },
+              { val: "30-90 min", label: "per patient planning time", icon: Clock },
               { val: "Variable", label: "inter-observer consistency", icon: Users },
               { val: "Manual", label: "contouring introduces error", icon: BarChart3 },
             ].map((item, i) => (
@@ -260,7 +260,7 @@ const LandingPage = () => {
               <div className="p-4 border-b border-border flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Brain className="w-4 h-4 text-medical-cyan" />
-                  <span className="text-sm font-semibold text-foreground">MRI Viewer â€” Axial Slice</span>
+                  <span className="text-sm font-semibold text-foreground">MRI Viewer — Axial Slice</span>
                 </div>
                 <div className="flex gap-1.5">
                   <span className="text-[9px] px-2 py-0.5 rounded-full bg-medical-red/10 text-medical-red border border-medical-red/20 font-medium">GTV</span>
@@ -286,7 +286,7 @@ const LandingPage = () => {
                   ))}
                 </svg>
                 <div className="absolute bottom-3 left-3 text-[10px] text-muted-foreground">
-                  Patient: Anna LindstrÃ¶m â€” Vestibularisschwannom
+                  Patient: Anna Lindstrom — Vestibular schwannoma
                 </div>
               </div>
             </div>
@@ -311,7 +311,7 @@ const LandingPage = () => {
                   <BrainScene showGTV showCTV showOAR autoRotate />
                 </Suspense>
                 <div className="absolute bottom-3 left-3 text-[10px] text-muted-foreground/60">
-                  Drag to rotate Â· Scroll to zoom
+                  Drag to rotate · Scroll to zoom
                 </div>
               </div>
             </div>
@@ -333,7 +333,7 @@ const LandingPage = () => {
                   For hospitals, clinics, and Elekta Gamma Knife systems
                 </h2>
                 <p className="text-lg opacity-70 mt-4 max-w-2xl mx-auto">
-                  Gamma Guardian AI integrates with your existing clinical workflowâ€”PACS, EMR, and Gamma Knife hardwareâ€”to deliver AI-assisted planning at enterprise scale.
+                  Gamma Guardian AI integrates with your existing clinical workflow—PACS, EMR, and Gamma Knife hardware—to deliver AI-assisted planning at enterprise scale.
                 </p>
               </motion.div>
 
@@ -363,7 +363,7 @@ const LandingPage = () => {
             <div className="w-6 h-6 rounded gradient-accent flex items-center justify-center">
               <Zap className="w-3 h-3 text-accent-foreground" />
             </div>
-            <span className="text-xs font-semibold text-muted-foreground">GammaAI â€” Gamma Knife Radiosurgery Suite</span>
+            <span className="text-xs font-semibold text-muted-foreground">GammaAI — Gamma Knife Radiosurgery Suite</span>
           </div>
           <div className="flex flex-wrap items-center gap-3 text-[10px] text-muted-foreground">
             <Link to="/about" className="hover:text-foreground">About</Link>
@@ -371,12 +371,12 @@ const LandingPage = () => {
             <Link to="/terms" className="hover:text-foreground">Terms</Link>
             <Link to="/cookies" className="hover:text-foreground">Cookies</Link>
             <Link to="/medical-disclaimer" className="hover:text-foreground">Medical Disclaimer</Link>
-            <span>â€¢</span>
+            <span>•</span>
             <span>EU AI Act Compliant</span>
-            <span>â€¢</span>
+            <span>•</span>
             <span>CE-Marked</span>
-            <span>â€¢</span>
-            <span>Â© {new Date().getFullYear()}</span>
+            <span>•</span>
+            <span>© {new Date().getFullYear()}</span>
           </div>
         </div>
       </footer>
@@ -385,6 +385,7 @@ const LandingPage = () => {
 };
 
 export default LandingPage;
+
 
 
 

@@ -124,7 +124,7 @@ const PlanningAssistant = () => {
       });
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({}));
-        throw new Error(err.error || "AI-fel");
+        throw new Error(err.error || "AI error");
       }
       const reader = resp.body!.getReader();
       const decoder = new TextDecoder();
@@ -332,14 +332,14 @@ const PlanningAssistant = () => {
               <div className="flex items-center gap-2 mb-3">
                 <Brain className="w-4 h-4 text-medical-cyan" />
                 <h3 className="text-sm font-semibold text-foreground">AI risk assessment</h3>
-                {isAILoading && <span className="text-[10px] text-muted-foreground animate-pulse">Genererar...</span>}
+                {isAILoading && <span className="text-[10px] text-muted-foreground animate-pulse">Generating...</span>}
               </div>
               <div className="prose prose-sm max-w-none text-xs text-foreground [&_h1]:text-sm [&_h2]:text-xs [&_h3]:text-xs [&_p]:text-xs [&_li]:text-xs">
                 {/* Simple markdown-like rendering */}
                 {aiRisk.split("\n").map((line, i) => {
                   if (line.startsWith("## ")) return <h3 key={i} className="font-semibold mt-3 mb-1 text-foreground">{line.slice(3)}</h3>;
                   if (line.startsWith("**") && line.endsWith("**")) return <p key={i} className="font-semibold text-foreground">{line.slice(2, -2)}</p>;
-                  if (line.startsWith("- ")) return <p key={i} className="ml-3 text-muted-foreground">â€¢ {line.slice(2)}</p>;
+                  if (line.startsWith("- ")) return <p key={i} className="ml-3 text-muted-foreground">• {line.slice(2)}</p>;
                   if (line.trim() === "") return <br key={i} />;
                   return <p key={i} className="text-muted-foreground">{line}</p>;
                 })}
@@ -464,6 +464,8 @@ const PlanningAssistant = () => {
 };
 
 export default PlanningAssistant;
+
+
 
 
 

@@ -123,7 +123,7 @@ const SettingsPage = () => {
               ))}
             </div>
             <div className="card-medical p-4">
-              <h3 className="text-sm font-semibold text-foreground mb-3">AI-modell</h3>
+              <h3 className="text-sm font-semibold text-foreground mb-3">AI model</h3>
               <div className="grid grid-cols-2 gap-3 text-xs">
                 {[
                   { label: "Segmentation model", value: "GammaNet v3.2" },
@@ -180,7 +180,7 @@ const SettingsPage = () => {
                 {[
                   { name: "Elekta Leksell GammaPlan", status: "Ready for integration", icon: Zap, connected: false },
                   { name: "PACS (DICOM)", status: "Configured", icon: Monitor, connected: true },
-                  { name: "EMR / Journalsystem", status: "HL7 FHIR compatible", icon: FileCheck, connected: false },
+                  { name: "EMR / EHR system", status: "HL7 FHIR compatible", icon: FileCheck, connected: false },
                 ].map((int, i) => (
                   <div key={i} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                     <div className="flex items-center gap-3">
@@ -208,7 +208,7 @@ const SettingsPage = () => {
                 <p>CE classification: Class IIa medical software</p>
                 <p>AI Engine: GammaNet v3.2 â€” Validated</p>
                 <p>Database: Mock data (local) — Ready for clinical IT</p>
-                <p>Deployment: Cloud/On-premise kompatibel</p>
+                <p>Deployment: Cloud/On-premise compatible</p>
                 <p>Last update: 2025-01-05</p>
               </div>
             </div>
@@ -220,6 +220,7 @@ const SettingsPage = () => {
 };
 
 export default SettingsPage;
+
 
 
 

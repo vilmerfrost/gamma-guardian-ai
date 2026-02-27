@@ -271,6 +271,7 @@ const ImageAnalysis = () => {
                       brainOpacity={brainOpacity}
                       clipAxis={clipAxis === "none" ? undefined : clipAxis}
                       clipPosition={clipPosition}
+                      volumeData={uploadedScan?.volume ?? null}
                     />
                   </Suspense>
                   {/* 3D controls overlay */}

@@ -2,6 +2,8 @@ import { useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
+import type { VolumeData } from "@/lib/volumeUtils";
+import { VolumeMesh } from "@/components/VolumeViewer";
 
 type ClipAxis = "x" | "y" | "z" | "none";
 
@@ -17,6 +19,8 @@ interface BrainSceneProps {
   brainOpacity?: number;
   clipAxis?: ClipAxis;
   clipPosition?: number;
+  /** When set, the 3D view shows this volume instead of the placeholder brain; overlays (GTV/CTV/OAR) are still shown. */
+  volumeData?: VolumeData | null;
 }
 
 function createBrainGeometry() {
@@ -65,6 +69,8 @@ function SampleBrainModel({
   showOptic,
   brainOpacity,
   clippingPlanes,
+  showPlaceholderBrain = true,
+  overlayScale = 1,
 }: {
   showGTV: boolean;
   showCTV: boolean;
@@ -74,27 +80,31 @@ function SampleBrainModel({
   showOptic: boolean;
   brainOpacity: number;
   clippingPlanes?: THREE.Plane[];
+  showPlaceholderBrain?: boolean;
+  overlayScale?: number;
 }) {
   const brainGeometry = useMemo(() => createBrainGeometry(), []);
 
   return (
-    <group>
-      <mesh geometry={brainGeometry}>
-        <meshPhysicalMaterial
-          color="#e7d2cb"
-          roughness={0.6}
-          metalness={0.05}
-          clearcoat={0.4}
-          clearcoatRoughness={0.7}
-          transmission={0.12}
-          thickness={1.2}
-          ior={1.35}
-          envMapIntensity={1.1}
-          transparent
-          opacity={brainOpacity}
-          clippingPlanes={clippingPlanes}
-        />
-      </mesh>
+    <group scale={[overlayScale, overlayScale, overlayScale]}>
+      {showPlaceholderBrain && (
+        <mesh geometry={brainGeometry}>
+          <meshPhysicalMaterial
+            color="#e7d2cb"
+            roughness={0.6}
+            metalness={0.05}
+            clearcoat={0.4}
+            clearcoatRoughness={0.7}
+            transmission={0.12}
+            thickness={1.2}
+            ior={1.35}
+            envMapIntensity={1.1}
+            transparent
+            opacity={brainOpacity}
+            clippingPlanes={clippingPlanes}
+          />
+        </mesh>
+      )}
 
       {showGTV && (
         <mesh position={[-0.58, 0.35, 0.42]} scale={[1.05, 0.9, 0.85]}>
@@ -190,11 +200,20 @@ export default function BrainScene({
   brainOpacity = 0.9,
   clipAxis = "none",
   clipPosition = 0,
+  volumeData = null,
 }: BrainSceneProps) {
   const cochleaVisible = showCochlea ?? showOAR;
   const facialVisible = showFacial ?? showOAR;
   const brainstemVisible = showBrainstem ?? showOAR;
   const opticVisible = showOptic ?? showOAR;
+
+  const hasVolume = volumeData != null && volumeData.data.length > 0;
+  const [nx, ny, nz] = volumeData?.dims ?? [1, 1, 1];
+  const maxDim = Math.max(nx, ny, nz);
+  const cameraZ = hasVolume ? maxDim * 1.4 : 4;
+  const minDist = hasVolume ? maxDim * 0.6 : 2.1;
+  const maxDist = hasVolume ? maxDim * 3 : 8;
+  const overlayScale = hasVolume ? maxDim * 0.35 : 1;
 
   const clippingPlanes = useMemo<THREE.Plane[] | undefined>(() => {
     if (clipAxis === "none") return undefined;
@@ -211,7 +230,7 @@ export default function BrainScene({
 
   return (
     <Canvas
-      camera={{ position: [0, 0.45, 4], fov: 40 }}
+      camera={{ position: [0, 0, cameraZ], fov: 40 }}
       style={{ background: "transparent" }}
       dpr={[1, 2]}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance", localClippingEnabled: true }}
@@ -223,6 +242,10 @@ export default function BrainScene({
       <directionalLight position={[-4, 1, -3]} intensity={0.45} color="#93c5fd" />
       <directionalLight position={[0, 3.5, -4]} intensity={0.85} color="#38bdf8" />
 
+      {hasVolume && (
+        <VolumeMesh volumeData={volumeData} opacity={brainOpacity} />
+      )}
+
       <SampleBrainModel
         showGTV={showGTV}
         showCTV={showCTV}
@@ -232,6 +255,8 @@ export default function BrainScene({
         showOptic={opticVisible}
         brainOpacity={brainOpacity}
         clippingPlanes={clippingPlanes}
+        showPlaceholderBrain={!hasVolume}
+        overlayScale={overlayScale}
       />
 
       <OrbitControls
@@ -240,8 +265,8 @@ export default function BrainScene({
         enablePan
         enableDamping
         dampingFactor={0.05}
-        minDistance={2.1}
-        maxDistance={8}
+        minDistance={minDist}
+        maxDistance={maxDist}
         rotateSpeed={0.65}
         zoomSpeed={0.75}
       />

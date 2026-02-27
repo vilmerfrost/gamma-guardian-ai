@@ -35,6 +35,38 @@ function canRenderImagePreview(file: File) {
   return PREVIEWABLE_EXTENSIONS.some((ext) => lower.endsWith(ext));
 }
 
+function createVolumePreviewDataUrl(volume: ParsedMedicalFile["volume"]) {
+  if (!volume || typeof document === "undefined") return null;
+
+  const [nx, ny, nz] = volume.dims;
+  if (nx < 1 || ny < 1 || nz < 1) return null;
+
+  const midZ = Math.floor(nz / 2);
+  const sliceOffset = midZ * nx * ny;
+  const canvas = document.createElement("canvas");
+  canvas.width = nx;
+  canvas.height = ny;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  const image = ctx.createImageData(nx, ny);
+  const out = image.data;
+  for (let y = 0; y < ny; y++) {
+    for (let x = 0; x < nx; x++) {
+      const srcIdx = sliceOffset + y * nx + x;
+      const intensity = Math.max(0, Math.min(255, Math.round((volume.data[srcIdx] ?? 0) * 255)));
+      const outIdx = (y * nx + x) * 4;
+      out[outIdx] = intensity;
+      out[outIdx + 1] = intensity;
+      out[outIdx + 2] = intensity;
+      out[outIdx + 3] = 255;
+    }
+  }
+
+  ctx.putImageData(image, 0, 0);
+  return canvas.toDataURL("image/png");
+}
+
 const ImageAnalysis = () => {
   const [selectedPatient] = useState(patients[0]);
   const [activeView, setActiveView] = useState<"axial" | "sagittal" | "coronal">("axial");
@@ -81,17 +113,24 @@ const ImageAnalysis = () => {
       const parsed = await parseMedicalFile(file);
       setUploadedScan(parsed);
       setLastUploadTime(new Date().toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
-      setLivePreviewUrl(canRenderImagePreview(file) ? URL.createObjectURL(file) : null);
-      toast.success(`Fil mottagen: ${parsed.fileName}`);
+      const previewUrl = canRenderImagePreview(file)
+        ? URL.createObjectURL(file)
+        : createVolumePreviewDataUrl(parsed.volume);
+      setLivePreviewUrl(previewUrl);
 
-      setTimeout(() => {
-        addNotification({
-          type: "success",
-          title: "Segmentering slutförd",
-          description: `${parsed.fileName} har preprocessats och är redo för 3D-analys.`,
-          link: "/dashboard/image-analysis",
-        });
-      }, 650);
+      if (parsed.volume) {
+        toast.success(`Fil mottagen: ${parsed.fileName}`);
+        setTimeout(() => {
+          addNotification({
+            type: "success",
+            title: "Segmentering slutförd",
+            description: `${parsed.fileName} har preprocessats och är redo för 3D-analys.`,
+            link: "/dashboard/image-analysis",
+          });
+        }, 650);
+      } else {
+        toast.warning("Filen laddades upp, men volymdata kunde inte parsas i browsern.");
+      }
     } catch (e: any) {
       toast.error(e?.message || "Kunde inte läsa filen");
     } finally {
@@ -114,7 +153,7 @@ const ImageAnalysis = () => {
   }, [handleMedicalFile]);
 
   useEffect(() => () => {
-    if (livePreviewUrl) URL.revokeObjectURL(livePreviewUrl);
+    if (livePreviewUrl?.startsWith("blob:")) URL.revokeObjectURL(livePreviewUrl);
   }, [livePreviewUrl]);
 
   // --- Contour drag handlers ---
@@ -593,3 +632,4 @@ const ImageAnalysis = () => {
 };
 
 export default ImageAnalysis;
+
